@@ -1,0 +1,24 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: gatekeeper-db
+    restart: always
+    environment:
+      POSTGRES_DB: gatekeeper_iam
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+
+    ports:
+      - "5432:5432"
+    volumes:
+      - gatekeeper_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gatekeeper"]
+      interval: 3s
+      timeout: 2s
+      retries: 5
+
+volumes:
+  gatekeeper_data:

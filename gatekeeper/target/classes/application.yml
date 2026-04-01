@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: gatekeeper-iam
+  config:
+    import: "optional:dotenv:.env"
+
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/gatekeeper_iam}
+    username: ${DATABASE_USERNAME:gatekeeper_admin}
+    password: ${DATABASE_PASSWORD:?DATABASE_PASSWORD must be set}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+
+server:
+  port: 8080
+
+application:
+  security:
+    encryption-key: ${APP_ENCRYPTION_KEY:?APP_ENCRYPTION_KEY must be set}
+    jwt:
+      secret-key: ${APP_JWT_SECRET:?APP_JWT_SECRET must be set}
+      expiration: ${APP_JWT_EXPIRATION:900000}
+      refresh-expiration: ${APP_JWT_REFRESH_EXPIRATION:604800000}
