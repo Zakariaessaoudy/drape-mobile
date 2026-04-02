@@ -1,0 +1,21 @@
+
+# ── Build / compiled output ──────────────────────────────────
+**/target/
+**/.gradle/
+**/build/
+**/__pycache__/
+**/*.pyc
+**/*.class
+**/*.jar
+
+# ── Environment & secrets ────────────────────────────────────
+**/.env
+**/.env.local
+**/.env.*.local
+**/secrets/
+
+# ── Logs & temp ──────────────────────────────────────────────
+**/*.log
+**/logs/
+**/.DS_Store
+**/Thumbs.db
