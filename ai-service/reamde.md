@@ -1,0 +1,1 @@
+#this folder is the responsable for AI service for removing background
