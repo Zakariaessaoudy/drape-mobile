@@ -1,0 +1,38 @@
+services:
+  wardrobe-db:
+    image: postgres:15-alpine
+    container_name: wardrobe-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${WARDROBE_DB_NAME:-wardrobe}
+      POSTGRES_USER: ${WARDROBE_DB_USER:-wardrobe}
+      POSTGRES_PASSWORD: ${WARDROBE_DB_PASSWORD:-wardrobe}
+    ports:
+      - "5434:5432"
+    volumes:
+      - wardrobe_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${WARDROBE_DB_USER:-wardrobe} -d ${WARDROBE_DB_NAME:-wardrobe}"]
+      interval: 3s
+      timeout: 2s
+      retries: 10
+
+  wardrobe-service:
+    build:
+      context: ./wardrobe-service
+      dockerfile: Dockerfile
+    container_name: wardrobe-service
+    restart: unless-stopped
+    depends_on:
+      wardrobe-db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://wardrobe-db:5432/${WARDROBE_DB_NAME:-wardrobe}
+      SPRING_DATASOURCE_USERNAME: ${WARDROBE_DB_USER:-wardrobe}
+      SPRING_DATASOURCE_PASSWORD: ${WARDROBE_DB_PASSWORD:-wardrobe}
+      APP_JWT_SECRET: ${APP_JWT_SECRET:-change-me-change-me-change-me-change-me-change-me}
+    ports:
+      - "8084:8080"
+
+volumes:
+  wardrobe_db_data:
