@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.6
-
 # --- Build stage ---
 FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app

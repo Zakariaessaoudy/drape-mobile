@@ -16,9 +16,9 @@ def make_test_image() -> bytes:
 
 
 FAKE_S3_RESULT = {
-    "file_id": "abc-123",
-    "s3_key": "users/user_42/2024-01-01/abc-123.png",
-    "url": "https://fashion-bg-remover.s3.eu-west-3.amazonaws.com/users/user_42/2024-01-01/abc-123.png",
+    "item_id": "item_123",
+    "s3_key": "users/user_42/items/item_123.png",
+    "url": "https://drape-wardrobe-images.s3.us-east-1.amazonaws.com/users/user_42/items/item_123.png",
     "user_id": "user_42",
 }
 
@@ -30,38 +30,41 @@ def test_health():
 
 
 @patch("app.main.upload_to_s3", return_value=FAKE_S3_RESULT)
-def test_remove_bg_returns_s3_url(mock_s3):
+@patch("app.main.notify_wardrobe")
+@patch("app.main.remove_background", return_value=b"png")
+def test_background_removal_accepts_request(mock_remove, mock_callback, mock_s3):
     img_bytes = make_test_image()
     response = client.post(
-        "/remove-bg",
-        data={"user_id": "user_42"},
-        files={"file": ("veste.jpg", img_bytes, "image/jpeg")},
+        "/api/background-removal",
+        data={"itemId": "item_123", "userId": "user_42"},
+        files={"image": ("veste.jpg", img_bytes, "image/jpeg")},
     )
-    assert response.status_code == 200
+    assert response.status_code == 202
     body = response.json()
-    assert body["success"] is True
-    assert body["user_id"] == "user_42"
-    assert body["file_id"] == "abc-123"
-    assert "s3.eu-west-3.amazonaws.com" in body["url"]
+    assert body["accepted"] is True
+    assert body["itemId"] == "item_123"
+    mock_callback.assert_called_once_with("item_123", image_url=FAKE_S3_RESULT["url"], status="READY")
 
 
 @patch("app.main.upload_to_s3", return_value=FAKE_S3_RESULT)
-def test_remove_bg_rejects_non_image(mock_s3):
+def test_background_removal_rejects_non_image(mock_s3):
     response = client.post(
-        "/remove-bg",
-        data={"user_id": "user_42"},
-        files={"file": ("test.txt", b"hello", "text/plain")},
+        "/api/background-removal",
+        data={"itemId": "item_123", "userId": "user_42"},
+        files={"image": ("test.txt", b"hello", "text/plain")},
     )
     assert response.status_code == 400
 
 
 @patch("app.main.upload_to_s3", side_effect=RuntimeError("S3 down"))
-def test_remove_bg_handles_s3_error(mock_s3):
+@patch("app.main.notify_wardrobe")
+@patch("app.main.remove_background", return_value=b"png")
+def test_background_task_reports_failure(mock_remove, mock_callback, mock_s3):
     img_bytes = make_test_image()
     response = client.post(
-        "/remove-bg",
-        data={"user_id": "user_42"},
-        files={"file": ("veste.jpg", img_bytes, "image/jpeg")},
+        "/api/background-removal",
+        data={"itemId": "item_123", "userId": "user_42"},
+        files={"image": ("veste.jpg", img_bytes, "image/jpeg")},
     )
-    assert response.status_code == 500
-    assert "S3 down" in response.json()["detail"]
+    assert response.status_code == 202
+    mock_callback.assert_called_once_with("item_123", image_url=None, status="FAILED")

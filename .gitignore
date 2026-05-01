@@ -1,4 +1,4 @@
-
+.env
 # ── Build / compiled output ──────────────────────────────────
 **/target/
 **/.gradle/
