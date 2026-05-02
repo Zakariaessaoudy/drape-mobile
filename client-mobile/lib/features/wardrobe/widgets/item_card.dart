@@ -1,0 +1,1 @@
+// Wardrobe item card widget.

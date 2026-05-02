@@ -1,0 +1,1 @@
+// Outfit card widget.
