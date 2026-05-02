@@ -56,6 +56,21 @@ public class ItemController {
         return itemService.getItems(authentication.getName(), categories);
     }
 
+    @GetMapping("/tops")
+    public List<CreateItemResponse> getTops(Authentication authentication) {
+        return itemService.getItems(authentication.getName(), List.of("TOP"));
+    }
+
+    @GetMapping("/bottoms")
+    public List<CreateItemResponse> getBottoms(Authentication authentication) {
+        return itemService.getItems(authentication.getName(), List.of("BOTTOM"));
+    }
+
+    @GetMapping("/shoes")
+    public List<CreateItemResponse> getShoes(Authentication authentication) {
+        return itemService.getItems(authentication.getName(), List.of("SHOE"));
+    }
+
     @PatchMapping("/{itemId}/image")
     public CreateItemResponse updateItemImage(
             @PathVariable String itemId,
