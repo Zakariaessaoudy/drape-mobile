@@ -43,3 +43,32 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# --- ADDITIONS TO YOUR .GITIGNORE ---
+
+# Essential Flutter Plugin Files
+.flutter-plugins
+
+# iOS / macOS Dependencies & Build Artifacts
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/flutter_assets/
+**/macos/Flutter/ephemeral/
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+**/macos/Pods/
+
+# Windows / Linux Build Artifacts
+**/windows/flutter/ephemeral/
+**/linux/flutter/ephemeral/
+
+# Secrets & Keystores (CRITICAL)
+*.keystore
+*.jks
+key.properties
+.env
+.env.*
