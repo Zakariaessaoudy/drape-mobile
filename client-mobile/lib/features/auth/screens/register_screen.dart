@@ -1,8 +1,12 @@
+import 'package:client_mobile/core/constants/app_constants.dart';
+import 'package:client_mobile/shared/backgrounds/signup_background.dart';
+import 'package:client_mobile/shared/widgets/auth_text_field.dart';
 import 'package:client_mobile/shared/widgets/drape_logo.dart';
+import 'package:client_mobile/shared/widgets/field_label.dart';
+import 'package:client_mobile/shared/widgets/neon_button.dart';
 import 'package:flutter/material.dart';
 
 import '../data/auth_api.dart';
-import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -65,7 +69,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          const Positioned.fill(child: _SignupBackground()),
+          const Positioned.fill(child: SignupBackground()),
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
@@ -150,6 +154,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 validator: (value) {
                                   if (value == null || value.trim().isEmpty) {
                                     return 'Email is required';
+                                  }
+                                  // A standard regex for validating email formats
+                                  final emailRegex = RegExp(
+                                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                                  );
+                                  if (!emailRegex.hasMatch(value)) {
+                                    return 'Please enter a valid email address';
                                   }
                                   return null;
                                 },
@@ -283,113 +294,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 14),
-                      const Center(
-                        child: Text(
-                          'SECURE ENCRYPTION',
-                          style: TextStyle(
-                            color: Color(0xFF313131),
-                            fontSize: 11,
-                            letterSpacing: 6,
-                          ),
-                        ),
-                      ),
                     ],
                   ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// class _SignupBackground extends StatelessWidget {
-//   const _SignupBackground();
-
-//   @override
-//   Widget build(BuildContext context) {
-//     // 1. Added SizedBox.expand to force the background to fill the screen
-//     return SizedBox.expand(
-//       child: DecoratedBox(
-//         decoration: const BoxDecoration(
-//           gradient: RadialGradient(
-//             center: Alignment(0.25, -0.2),
-//             radius: 0.9,
-//             colors: [Color(0xFF14332B), Color(0xFF050706), Colors.black],
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-// }
-class _SignupBackground extends StatelessWidget {
-  const _SignupBackground();
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox.expand(
-      child: Stack(
-        children: [
-          // 1. Base Gradient: Smoothed out the stops for a richer transition
-          const Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment(0.3, -0.4),
-                  radius: 1.2,
-                  colors: [
-                    Color(0xFF1A4237), // Slightly brighter inner core
-                    Color(0xFF091410), // Deep forest/emerald mid-tone
-                    Colors.black, // True black at the edges
-                  ],
-                  stops: [0.0, 0.5, 1.0], // Controls the falloff smoothly
-                ),
-              ),
-            ),
-          ),
-
-          // 2. Ambient Glow: Creates a "neon light off-screen" effect
-          Positioned(
-            top: -60,
-            right: -80,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    // Replace with your AuthColors.neon if you have it!
-                    color: const Color(0xFF00FF7F).withValues(alpha: 0.08),
-                    blurRadius: 100,
-                    spreadRadius: 40,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // 3. Bottom Vignette: Crucial for UI readability
-          // Fades the bottom of the screen to deep black so buttons/text pop
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.2),
-                    Colors.black.withValues(alpha: 0.85),
-                  ],
-                  stops: const [
-                    0.6,
-                    0.85,
-                    1.0,
-                  ], // Pushes the dark fade to the very bottom
                 ),
               ),
             ),

@@ -1,9 +1,8 @@
+import 'package:client_mobile/core/constants/app_constants.dart';
 import 'package:flutter/material.dart';
 
 class DrapeLogo extends StatelessWidget {
   const DrapeLogo({super.key, required this.size, required this.assetPath});
-
-  static const _fallbackColor = Color(0xFFC7FF00);
 
   final double size;
   final String assetPath;
@@ -21,7 +20,7 @@ class DrapeLogo extends StatelessWidget {
         return Text(
           'DRAPE',
           style: TextStyle(
-            color: _fallbackColor,
+            color: AuthColors.neon,
             fontSize: size,
             fontWeight: FontWeight.w900,
             fontStyle: FontStyle.italic,
