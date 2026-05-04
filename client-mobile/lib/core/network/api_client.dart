@@ -9,9 +9,10 @@ class ApiClient {
   ApiClient({
     http.Client? httpClient,
     TokenStorage? tokenStorage,
-    this.baseUrl = ApiConstants.wardrobeBaseUrl,
+    String? baseUrl,
   }) : _httpClient = httpClient ?? http.Client(),
-       _tokenStorage = tokenStorage ?? TokenStorage();
+       _tokenStorage = tokenStorage ?? TokenStorage(),
+       baseUrl = baseUrl ?? ApiConstants.wardrobeBaseUrl;
 
   final http.Client _httpClient;
   final TokenStorage _tokenStorage;

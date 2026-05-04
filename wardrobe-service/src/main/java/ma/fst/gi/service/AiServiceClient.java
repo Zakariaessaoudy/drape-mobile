@@ -47,14 +47,40 @@ public class AiServiceClient {
             };
 
             HttpHeaders headers = new HttpHeaders();
-            String contentType = image.getContentType() == null
-                    ? MediaType.APPLICATION_OCTET_STREAM_VALUE
-                    : image.getContentType();
+            String contentType = resolveImageContentType(image);
             headers.setContentType(MediaType.parseMediaType(contentType));
 
             return new HttpEntity<>(resource, headers);
         } catch (IOException e) {
             throw new IllegalStateException("could not read uploaded image", e);
         }
+    }
+
+    private String resolveImageContentType(MultipartFile image) {
+        String contentType = image.getContentType();
+        if (contentType != null
+                && contentType.startsWith("image/")
+                && !MediaType.APPLICATION_OCTET_STREAM_VALUE.equals(contentType)) {
+            return contentType;
+        }
+
+        String filename = image.getOriginalFilename();
+        if (filename != null) {
+            String lowerFilename = filename.toLowerCase();
+            if (lowerFilename.endsWith(".png")) {
+                return MediaType.IMAGE_PNG_VALUE;
+            }
+            if (lowerFilename.endsWith(".jpg") || lowerFilename.endsWith(".jpeg")) {
+                return MediaType.IMAGE_JPEG_VALUE;
+            }
+            if (lowerFilename.endsWith(".gif")) {
+                return MediaType.IMAGE_GIF_VALUE;
+            }
+            if (lowerFilename.endsWith(".webp")) {
+                return "image/webp";
+            }
+        }
+
+        return MediaType.IMAGE_JPEG_VALUE;
     }
 }
