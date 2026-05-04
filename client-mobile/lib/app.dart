@@ -1,4 +1,6 @@
+import 'package:camera/camera.dart';
 import 'package:client_mobile/core/constants/app_constants.dart';
+import 'package:client_mobile/features/camera/smart_camera_screen.dart';
 import 'package:client_mobile/shared/widgets/drape_logo.dart';
 import 'package:client_mobile/shared/widgets/neon_button.dart';
 import 'package:flutter/material.dart';
@@ -7,7 +9,9 @@ import 'core/storage/token_storage.dart';
 import 'features/auth/screens/login_screen.dart';
 
 class DrapeApp extends StatelessWidget {
-  const DrapeApp({super.key});
+  const DrapeApp({super.key, this.cameras = const []});
+
+  final List<CameraDescription> cameras;
 
   @override
   Widget build(BuildContext context) {
@@ -19,20 +23,19 @@ class DrapeApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.black,
         fontFamily: 'Arial',
       ),
-      home: const _AuthGate(),
+      home: _AuthGate(cameras: cameras),
       routes: {
         '/login': (_) => const LoginScreen(),
-        //had route '/home' ghadi ttbdel b page l'accueil dyal l'application mlli ykmlo l fonctionnalités l'principales.
-        '/home': (_) => const _SignedInScreen(),
+        '/home': (_) => _SignedInScreen(cameras: cameras),
       },
     );
   }
 }
 
-// A simple widget that checks if the user is authenticated and shows either the login screen or a signed-in screen.
-// Hadi widget basita katchecki wach lmosta3mil msigni w katban lih login screen ola signed-in screen.
 class _AuthGate extends StatelessWidget {
-  const _AuthGate();
+  const _AuthGate({required this.cameras});
+
+  final List<CameraDescription> cameras;
 
   @override
   Widget build(BuildContext context) {
@@ -47,16 +50,18 @@ class _AuthGate extends StatelessWidget {
           );
         }
 
-        return snapshot.data! ? const _SignedInScreen() : const LoginScreen();
+        return snapshot.data!
+            ? _SignedInScreen(cameras: cameras)
+            : const LoginScreen();
       },
     );
   }
 }
 
-// A simple screen shown when the user is signed in, with a logout button.
-//in darija: Hadi screen basita katban ila kan lmosta3mil msigni, w fiha bouton dyal logout.
 class _SignedInScreen extends StatelessWidget {
-  const _SignedInScreen();
+  const _SignedInScreen({required this.cameras});
+
+  final List<CameraDescription> cameras;
 
   Future<void> _logout(BuildContext context) async {
     await TokenStorage().clearToken();
@@ -86,6 +91,20 @@ class _SignedInScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
+            SizedBox(
+              width: 220,
+              child: NeonButton(
+                text: 'ADD ITEM',
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => SmartCameraScreen(cameras: cameras),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
             SizedBox(
               width: 140,
               child: NeonButton(
