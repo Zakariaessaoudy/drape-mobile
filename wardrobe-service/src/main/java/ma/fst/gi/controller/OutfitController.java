@@ -19,6 +19,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/outfits")
+
 public class OutfitController {
 
     private final OutfitService outfitService;

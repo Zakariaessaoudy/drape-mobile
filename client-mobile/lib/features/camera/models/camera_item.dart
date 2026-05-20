@@ -32,4 +32,5 @@ class CameraItem {
       imageStatus: json['imageStatus'] as String? ?? 'UNKNOWN',
     );
   }
+
 }
