@@ -11,6 +11,45 @@ class ItemApi {
 
   final ApiClient _apiClient;
 
+  Future<List<WardrobeItem>> fetchItems({String category = 'ALL'}) async {
+    try {
+      final json =
+          await _apiClient.get(_pathForCategory(category)) as List<dynamic>;
+
+      return json
+          .map((item) => WardrobeItem.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } on ApiException catch (error) {
+      if (error.statusCode == 401 || error.statusCode == 403) {
+        throw const ItemApiException(
+          'Session expired. Please log in again.',
+          sessionExpired: true,
+        );
+      }
+
+      throw ItemApiException('Could not fetch items: ${error.message}');
+    } on http.ClientException {
+      throw ItemApiException(
+        'Cannot reach Wardrobe API at ${_apiClient.baseUrl}',
+      );
+    } catch (_) {
+      throw const ItemApiException('Could not fetch items');
+    }
+  }
+
+  String _pathForCategory(String category) {
+    switch (category) {
+      case ApiConstants.categoryTop:
+        return ApiConstants.itemTops;
+      case ApiConstants.categoryBottom:
+        return ApiConstants.itemBottoms;
+      case ApiConstants.categoryShoe:
+        return ApiConstants.itemShoes;
+      default:
+        return ApiConstants.items;
+    }
+  }
+
   Future<WardrobeItem> createItem({
     required String name,
     required String category,
@@ -57,4 +96,7 @@ class ItemApiException implements Exception {
 
   final String message;
   final bool sessionExpired;
+
+  @override
+  String toString() => message;
 }

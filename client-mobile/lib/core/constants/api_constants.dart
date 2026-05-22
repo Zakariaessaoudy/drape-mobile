@@ -12,6 +12,11 @@ class ApiConstants {
     defaultValue: 'auto',
   );
   static const _apiHostOverride = String.fromEnvironment('DRAPE_API_HOST');
+  static const _deviceHostIp = String.fromEnvironment('DRAPE_DEVICE_HOST_IP');
+  static const _windowsHostIp = String.fromEnvironment(
+    'DRAPE_WINDOWS_HOST_IP',
+    defaultValue: '192.168.1.114',
+  );
   static const _macHostIp = String.fromEnvironment(
     'DRAPE_MAC_HOST_IP',
     defaultValue: '192.168.1.166',
@@ -46,14 +51,27 @@ class ApiConstants {
       case 'local':
         return 'localhost';
       case 'android-device':
+      case 'ios-device':
       case 'android-usb':
+      case 'ios-usb':
+      case 'device':
+        return _preferredDeviceHost;
+      case 'android-device-windows':
+      case 'ios-device-windows':
+      case 'android-usb-windows':
+      case 'ios-usb-windows':
+        return _windowsHostIp;
+      case 'android-device-mac':
+      case 'ios-device-mac':
+      case 'android-usb-mac':
+      case 'ios-usb-mac':
         return _macHostIp;
     }
 
     if (kIsWeb) return 'localhost';
 
     return switch (defaultTargetPlatform) {
-      TargetPlatform.android => _macHostIp,
+      TargetPlatform.android => _windowsHostIp,
       TargetPlatform.iOS => 'localhost',
       _ => 'localhost',
     };
@@ -72,4 +90,9 @@ class ApiConstants {
   static const categoryTop = 'TOP';
   static const categoryBottom = 'BOTTOM';
   static const categoryShoe = 'SHOE';
+
+  static String get _preferredDeviceHost {
+    if (_deviceHostIp.isNotEmpty) return _deviceHostIp;
+    return _windowsHostIp;
+  }
 }
