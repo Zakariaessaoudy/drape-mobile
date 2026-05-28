@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="NONE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="dbca0c4c-3138-4344-809e-7044c49e84ae" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/client-mobile/lib/features/outfits/data/wardrobe_mock_data.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client-mobile/lib/features/outfits/models/outfit_item_model.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client-mobile/lib/features/outfits/models/slot_type.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client-mobile/lib/features/outfits/screens/outfit_builder_screen.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client-mobile/lib/features/outfits/screens/wardrobe_screen.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client-mobile/lib/features/outfits/widgets/category_selector.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client-mobile/lib/features/outfits/widgets/clothing_item_card.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client-mobile/lib/features/outfits/widgets/drape_theme.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client-mobile/lib/features/outfits/widgets/item_carousel_sheet.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client-mobile/lib/features/outfits/widgets/mannequin_view.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client-mobile/lib/features/outfits/widgets/save_outfit_sheet.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client-mobile/lib/features/outfits/widgets/slot_pill.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client-mobile/lib/features/outfits/models/outfit.dart" beforeDir="false" afterPath="$PROJECT_DIR$/client-mobile/lib/features/outfits/models/outfit.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client-mobile/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/client-mobile/lib/main.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client-mobile/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/client-mobile/pubspec.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client-mobile/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/client-mobile/pubspec.yaml" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 1
+}</component>
+  <component name="ProjectId" id="3Cq7w7Pfk1HU5UmwjGCjoMBu42n" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Flutter.main.dart.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;feature/tryOutfit&quot;,
+    &quot;io.flutter.reload.alreadyRun&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/pc/Documents/PROJETS/drape-mobile&quot;,
+    &quot;show.migrate.to.gradle.popup&quot;: &quot;false&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\pc\Documents\PROJETS\drape-mobile\client-mobile\assets\images" />
+    </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="main.dart" type="FlutterRunConfigurationType" factoryName="Flutter" temporary="true" nameIsGenerated="true">
+      <option name="filePath" value="$PROJECT_DIR$/client-mobile/lib/main.dart" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Flutter.main.dart" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="dbca0c4c-3138-4344-809e-7044c49e84ae" name="Changes" comment="" />
+      <created>1777101482082</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1777101482082</updated>
+    </task>
+    <servers />
+  </component>
+</project>
