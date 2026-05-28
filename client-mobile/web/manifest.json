@@ -1,11 +1,11 @@
 {
-    "name": "client_mobile",
-    "short_name": "client_mobile",
+    "name": "Drape",
+    "short_name": "Drape",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#000000",
+    "theme_color": "#C7FF00",
+    "description": "Drape virtual wardrobe.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
