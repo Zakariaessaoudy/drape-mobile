@@ -5,6 +5,8 @@ import '../models/auth_response.dart';
 import '../models/login_request.dart';
 import '../models/register_request.dart';
 
+export '../../../core/network/api_client.dart' show ApiException;
+
 class AuthApi {
   AuthApi({ApiClient? apiClient, TokenStorage? tokenStorage})
     : _apiClient = apiClient ?? ApiClient(),
@@ -22,6 +24,11 @@ class AuthApi {
         ApiConstants.authLogin,
         LoginRequest(email: email.trim(), password: password).toJson(),
       );
+    } on ApiException catch (e) {
+      if (e.statusCode == 401) {
+        throw const AuthException('Invalid email or password');
+      }
+      throw AuthException('Could not sign in: ${e.message}');
     } catch (_) {
       throw const AuthException('Invalid email or password');
     }
@@ -41,8 +48,10 @@ class AuthApi {
           password: password,
         ).toJson(),
       );
-    } catch (_) {
-      throw const AuthException('Could not create this account');
+    } on ApiException catch (e) {
+      throw AuthException('Could not create account: ${e.message}');
+    } catch (e) {
+      throw AuthException('Could not create account: ${e.toString()}');
     }
   }
 
@@ -55,7 +64,11 @@ class AuthApi {
             as Map<String, dynamic>;
 
     final response = AuthResponse.fromJson(json);
-    await _tokenStorage.saveToken(response.token);
+    await _tokenStorage.saveSession(
+      token: response.token,
+      email: response.email,
+      name: response.name,
+    );
     return response;
   }
 }

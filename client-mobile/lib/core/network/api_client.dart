@@ -23,9 +23,11 @@ class ApiClient {
     Map<String, String>? queryParameters,
     bool authenticated = true,
   }) async {
-    final response = await _httpClient.get(
-      _uri(path, queryParameters),
-      headers: await _headers(authenticated: authenticated),
+    final response = await _send(
+      () async => _httpClient.get(
+        _uri(path, queryParameters),
+        headers: await _headers(authenticated: authenticated),
+      ),
     );
     return _decode(response);
   }
@@ -35,10 +37,12 @@ class ApiClient {
     Map<String, dynamic>? body,
     bool authenticated = true,
   }) async {
-    final response = await _httpClient.post(
-      _uri(path),
-      headers: await _headers(authenticated: authenticated),
-      body: jsonEncode(body ?? <String, dynamic>{}),
+    final response = await _send(
+      () async => _httpClient.post(
+        _uri(path),
+        headers: await _headers(authenticated: authenticated),
+        body: jsonEncode(body ?? <String, dynamic>{}),
+      ),
     );
     return _decode(response);
   }
@@ -48,18 +52,22 @@ class ApiClient {
     Map<String, dynamic>? body,
     bool authenticated = true,
   }) async {
-    final response = await _httpClient.patch(
-      _uri(path),
-      headers: await _headers(authenticated: authenticated),
-      body: jsonEncode(body ?? <String, dynamic>{}),
+    final response = await _send(
+      () async => _httpClient.patch(
+        _uri(path),
+        headers: await _headers(authenticated: authenticated),
+        body: jsonEncode(body ?? <String, dynamic>{}),
+      ),
     );
     return _decode(response);
   }
 
   Future<void> delete(String path, {bool authenticated = true}) async {
-    final response = await _httpClient.delete(
-      _uri(path),
-      headers: await _headers(authenticated: authenticated),
+    final response = await _send(
+      () async => _httpClient.delete(
+        _uri(path),
+        headers: await _headers(authenticated: authenticated),
+      ),
     );
     _ensureSuccess(response);
   }
@@ -82,9 +90,22 @@ class ApiClient {
       );
     }
 
-    final streamedResponse = await _httpClient.send(request);
+    final streamedResponse = await _send(() => _httpClient.send(request));
     final response = await http.Response.fromStream(streamedResponse);
     return _decode(response);
+  }
+
+  Future<T> _send<T>(Future<T> Function() request) async {
+    try {
+      return await request();
+    } on http.ClientException catch (error) {
+      throw ApiException(statusCode: 0, message: _networkErrorMessage(error));
+    } catch (error) {
+      if (_looksLikeNetworkError(error)) {
+        throw ApiException(statusCode: 0, message: _networkErrorMessage(error));
+      }
+      rethrow;
+    }
   }
 
   Uri _uri(String path, [Map<String, String>? queryParameters]) {
@@ -131,9 +152,53 @@ class ApiClient {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException(
         statusCode: response.statusCode,
-        message: response.body.isEmpty ? 'Request failed' : response.body,
+        message: _errorMessage(response),
       );
     }
+  }
+
+  String _errorMessage(http.Response response) {
+    if (response.body.isEmpty) {
+      return 'Request failed';
+    }
+
+    try {
+      final json = jsonDecode(response.body);
+      if (json is Map<String, dynamic>) {
+        for (final key in ['detail', 'message', 'error', 'title']) {
+          final value = json[key];
+          if (value is String && value.trim().isNotEmpty) {
+            return value.trim();
+          }
+        }
+      }
+    } catch (_) {
+      // Fall back to the raw response body when the server does not return JSON.
+    }
+
+    return response.body;
+  }
+
+  bool _looksLikeNetworkError(Object error) {
+    final errorText = error.toString().toLowerCase();
+    return errorText.contains('socketexception') ||
+        errorText.contains('connection refused') ||
+        errorText.contains('failed host lookup') ||
+        errorText.contains('xmlhttprequest error');
+  }
+
+  String _networkErrorMessage(Object error) {
+    final hint =
+        'Unable to reach the server at $baseUrl. '
+        'For a physical device, use your computer LAN IP with '
+        '--dart-define=DRAPE_DEVICE_HOST_IP=<your-computer-ip> '
+        'or --dart-define=DRAPE_API_HOST=<your-computer-ip>.';
+
+    if (error is http.ClientException && error.message.trim().isNotEmpty) {
+      return '$hint ${error.message}';
+    }
+
+    return '$hint ${error.toString()}';
   }
 
   void close() {

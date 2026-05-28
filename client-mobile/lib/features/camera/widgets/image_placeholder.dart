@@ -13,7 +13,11 @@ class ImagePlaceholder extends StatelessWidget {
       color: const Color(0xFF151515),
       alignment: Alignment.center,
       padding: const EdgeInsets.all(20),
-      child: Text(text, textAlign: TextAlign.center),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: const TextStyle(color: Colors.white70),
+      ),
     );
   }
 }
