@@ -7,6 +7,14 @@ class ApiConstants {
     'WARDROBE_API_BASE_URL',
   );
   static const _aiBaseUrlOverride = String.fromEnvironment('AI_API_BASE_URL');
+  static const _productionWardrobeBaseUrl = String.fromEnvironment(
+    'DRAPE_PROD_WARDROBE_API_BASE_URL',
+    defaultValue: 'https://drape-mobile.onrender.com',
+  );
+  static const _productionAiBaseUrl = String.fromEnvironment(
+    'DRAPE_PROD_AI_API_BASE_URL',
+    defaultValue: 'https://zkressaoudy-drape-bg-remover.hf.space',
+  );
   static const _apiTarget = String.fromEnvironment(
     'DRAPE_API_TARGET',
     defaultValue: 'auto',
@@ -32,12 +40,23 @@ class ApiConstants {
 
   static String get wardrobeBaseUrl {
     if (_wardrobeBaseUrlOverride.isNotEmpty) return _wardrobeBaseUrlOverride;
+    if (_usesProductionBackend && _productionWardrobeBaseUrl.isNotEmpty) {
+      return _productionWardrobeBaseUrl;
+    }
     return 'http://$_apiHost:$_wardrobePort';
   }
 
   static String get aiBaseUrl {
     if (_aiBaseUrlOverride.isNotEmpty) return _aiBaseUrlOverride;
+    if (_usesProductionBackend) return _productionAiBaseUrl;
     return 'http://$_apiHost:$_aiPort';
+  }
+
+  static bool get _usesProductionBackend {
+    return _apiTarget == 'production' ||
+        _apiTarget == 'prod' ||
+        _apiTarget == 'render' ||
+        _apiTarget == 'deployed';
   }
 
   static String get _apiHost {
@@ -52,10 +71,12 @@ class ApiConstants {
         return 'localhost';
       case 'android-device':
       case 'ios-device':
-      case 'android-usb':
       case 'ios-usb':
       case 'device':
         return _preferredDeviceHost;
+      case 'android-usb':
+      case 'android-usb-reverse':
+        return '127.0.0.1';
       case 'android-device-windows':
       case 'ios-device-windows':
       case 'android-usb-windows':

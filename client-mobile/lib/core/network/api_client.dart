@@ -150,9 +150,12 @@ class ApiClient {
 
   void _ensureSuccess(http.Response response) {
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      final message = _errorMessage(response);
       throw ApiException(
         statusCode: response.statusCode,
-        message: _errorMessage(response),
+        message: response.statusCode == 404
+            ? '$message at ${response.request?.url ?? baseUrl}'
+            : message,
       );
     }
   }

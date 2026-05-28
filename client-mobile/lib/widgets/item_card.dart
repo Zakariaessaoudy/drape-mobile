@@ -5,10 +5,7 @@ import 'package:shimmer/shimmer.dart';
 import '../models/item_model.dart';
 
 class ItemCard extends StatelessWidget {
-  const ItemCard({
-    super.key,
-    required this.item,
-  });
+  const ItemCard({super.key, required this.item});
 
   final ItemModel item;
 
@@ -32,11 +29,7 @@ class ItemCard extends StatelessWidget {
         return Container(
           color: const Color(0xFFE0E0E0),
           alignment: Alignment.center,
-          child: const Icon(
-            Icons.error_outline,
-            color: Colors.grey,
-            size: 34,
-          ),
+          child: const Icon(Icons.error_outline, color: Colors.grey, size: 34),
         );
       case 'READY':
         if (item.imageUrl == null || item.imageUrl!.isEmpty) {
@@ -45,7 +38,7 @@ class ItemCard extends StatelessWidget {
         return CachedNetworkImage(
           imageUrl: item.imageUrl!,
           fit: BoxFit.cover,
-          errorWidget: (_, __, ___) => _buildCardFallback(),
+          errorWidget: (context, error, stackTrace) => _buildCardFallback(),
         );
       case 'PROCESSING':
       case 'PENDING':

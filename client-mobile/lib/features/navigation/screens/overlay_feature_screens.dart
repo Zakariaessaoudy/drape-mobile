@@ -539,10 +539,7 @@ class _FeaturePageShell extends StatelessWidget {
         foregroundColor: Colors.white,
         elevation: 0,
         titleSpacing: 0,
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.w800),
-        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
       ),
       body: SafeArea(
         top: false,
@@ -992,7 +989,9 @@ class _TwoColumnCards extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: _MiniStoryCard(title: leftTitle, caption: leftCaption)),
+        Expanded(
+          child: _MiniStoryCard(title: leftTitle, caption: leftCaption),
+        ),
         const SizedBox(width: 12),
         Expanded(
           child: _MiniStoryCard(title: rightTitle, caption: rightCaption),
@@ -1107,7 +1106,7 @@ class _PreferenceSwitchTile extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: Colors.black,
+            activeThumbColor: Colors.black,
             activeTrackColor: AuthColors.neon,
             inactiveThumbColor: Colors.white,
             inactiveTrackColor: const Color(0xFF2A2A2A),
@@ -1276,12 +1275,12 @@ class _InsightData {
   });
 
   const _InsightData.empty()
-      : itemCount = 0,
-        outfitCount = 0,
-        topCount = 0,
-        bottomCount = 0,
-        shoeCount = 0,
-        readyCount = 0;
+    : itemCount = 0,
+      outfitCount = 0,
+      topCount = 0,
+      bottomCount = 0,
+      shoeCount = 0,
+      readyCount = 0;
 
   final int itemCount;
   final int outfitCount;

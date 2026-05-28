@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 
 import '../features/camera/smart_camera_screen.dart';
 import '../providers/wardrobe_provider.dart';
-import '../widgets/add_item_sheet.dart';
 import '../widgets/drape_bottom_nav.dart';
 import '../widgets/filter_row.dart';
 import '../widgets/item_card.dart';
@@ -38,18 +37,6 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
       MaterialPageRoute<void>(
         builder: (_) => SmartCameraScreen(cameras: cameras),
       ),
-    );
-  }
-
-  Future<void> _openAddItemSheet() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFF1A1A1A),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => const AddItemSheet(),
     );
   }
 

@@ -57,11 +57,11 @@ class _AddItemSheetState extends State<AddItemSheet> {
 
     try {
       await context.read<WardrobeProvider>().addItem(
-            name: _nameController.text.trim(),
-            category: _selectedCategory,
-            color: _colorController.text.trim(),
-            imageFile: _selectedImage!,
-          );
+        name: _nameController.text.trim(),
+        category: _selectedCategory,
+        color: _colorController.text.trim(),
+        imageFile: _selectedImage!,
+      );
 
       if (!mounted) {
         return;
@@ -71,9 +71,9 @@ class _AddItemSheetState extends State<AddItemSheet> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
     } finally {
       if (mounted) {
         setState(() {
@@ -120,7 +120,7 @@ class _AddItemSheetState extends State<AddItemSheet> {
               ),
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 dropdownColor: const Color(0xFF222222),
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(labelText: 'Category'),
@@ -184,7 +184,9 @@ class _AddItemSheetState extends State<AddItemSheet> {
                         color: Colors.white10,
                         alignment: Alignment.center,
                         child: const CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC6F135)),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Color(0xFFC6F135),
+                          ),
                         ),
                       );
                     },
@@ -213,7 +215,9 @@ class _AddItemSheetState extends State<AddItemSheet> {
                           height: 22,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.4,
-                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF111111)),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Color(0xFF111111),
+                            ),
                           ),
                         )
                       : const Text('ADD ITEM'),

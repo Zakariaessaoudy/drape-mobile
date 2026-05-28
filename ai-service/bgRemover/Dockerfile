@@ -15,6 +15,6 @@ RUN python -c "from rembg import remove; print('Model pre-downloaded')" || true
 
 COPY app/ ./app/
 
-EXPOSE 8000
+EXPOSE 7860
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-7860}"]

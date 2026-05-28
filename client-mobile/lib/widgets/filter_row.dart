@@ -24,7 +24,7 @@ class FilterRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20),
         scrollDirection: Axis.horizontal,
         itemCount: _filters.length,
-        separatorBuilder: (_, __) => Container(
+        separatorBuilder: (context, index) => Container(
           width: 1,
           margin: const EdgeInsets.symmetric(vertical: 12),
           color: const Color(0xFF444444),
@@ -69,10 +69,7 @@ class FilterRow extends StatelessWidget {
 }
 
 class _FilterOption {
-  const _FilterOption({
-    required this.label,
-    required this.value,
-  });
+  const _FilterOption({required this.label, required this.value});
 
   final String label;
   final String value;
