@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import '../../../core/network/api_client.dart';
+
 import '../../camera/api/signed_image_api.dart';
-import '../models/outfit_item_model.dart';
-import '../models/slot_type.dart';
+
 
 class OutfitBuilderProvider extends ChangeNotifier {
   OutfitBuilderProvider({ApiClient? apiClient})
-      : _apiClient = apiClient ?? ApiClient() {
+    : _apiClient = apiClient ?? ApiClient() {
     _loadAll();
   }
 
   final ApiClient _apiClient;
-  final SignedImageApi _signedImageApi = SignedImageApi();
 
  
 
@@ -57,8 +56,7 @@ class OutfitBuilderProvider extends ChangeNotifier {
     }
   }
 
-  bool isSelected(SlotType slot, String itemId) =>
-      _selectedId[slot] == itemId;
+  bool isSelected(SlotType slot, String itemId) => _selectedId[slot] == itemId;
 
   bool isLoadingSlot(SlotType slot) => _loading[slot] ?? false;
 
@@ -73,15 +71,13 @@ class OutfitBuilderProvider extends ChangeNotifier {
   /// True only when all 3 slots have a selection
   bool get canSave =>
       _selectedId[SlotType.tops] != null &&
-          _selectedId[SlotType.bottoms] != null &&
-          _selectedId[SlotType.shoes] != null;
+      _selectedId[SlotType.bottoms] != null &&
+      _selectedId[SlotType.shoes] != null;
 
   // ── Load ─────────────────────────────────────────────────────────────────
 
   Future<void> _loadAll() async {
-    await Future.wait(
-      SlotType.values.map((slot) => _loadSlot(slot)),
-    );
+    await Future.wait(SlotType.values.map((slot) => _loadSlot(slot)));
   }
 
   Future<void> _loadSlot(SlotType slot) async {
@@ -100,9 +96,10 @@ class OutfitBuilderProvider extends ChangeNotifier {
 
       // TEST : On utilise l'URL d'origine sans passer par SignedImageApi
       _slotItems[slot] = rawItems;
-
     } on ApiException catch (e) {
-      _error[slot] = e.statusCode == 401 ? 'Session expired.' : 'Error ${e.statusCode}.';
+      _error[slot] = e.statusCode == 401
+          ? 'Session expired.'
+          : 'Error ${e.statusCode}.';
     } catch (_) {
       _error[slot] = 'Cannot reach server.';
     }
@@ -110,6 +107,7 @@ class OutfitBuilderProvider extends ChangeNotifier {
     _loading[slot] = false;
     notifyListeners();
   }
+
   Future<void> retrySlot(SlotType slot) => _loadSlot(slot);
 
   // ── Selection ─────────────────────────────────────────────────────────────

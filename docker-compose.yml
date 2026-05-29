@@ -34,7 +34,7 @@ services:
       AI_SERVICE_URL: http://ai-service:8000
       AI_CALLBACK_SECRET: ${AI_CALLBACK_SECRET:-local-ai-secret}
     ports:
-      - "8084:8080"
+      - "8084:8084"
 
   ai-service:
     build:
@@ -44,11 +44,12 @@ services:
     restart: unless-stopped
     environment:
       PYTHONUNBUFFERED: "1"
+      PORT: "8000"
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_REGION: ${AWS_REGION:-us-east-1}
       AWS_S3_BUCKET: ${AWS_S3_BUCKET:-drape-wardrobe-images}
-      WARDROBE_SERVICE_URL: http://wardrobe-service:8080
+      WARDROBE_SERVICE_URL: http://wardrobe-service:8084
       WARDROBE_CALLBACK_SECRET: ${AI_CALLBACK_SECRET:-local-ai-secret}
     volumes:
       - rembg_cache:/root/.u2net

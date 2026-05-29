@@ -110,10 +110,7 @@ class _SaveOutfitSheetState extends State<SaveOutfitSheet> {
               const SizedBox(height: 12),
               Text(
                 provider.saveError!,
-                style: const TextStyle(
-                  color: Color(0xFFFF6B6B),
-                  fontSize: 13,
-                ),
+                style: const TextStyle(color: Color(0xFFFF6B6B), fontSize: 13),
               ),
             ],
 
@@ -126,37 +123,38 @@ class _SaveOutfitSheetState extends State<SaveOutfitSheet> {
               child: provider.saved
                   ? _SavedButton()
                   : ElevatedButton(
-                onPressed: provider.isSaving
-                    ? null
-                    : () => _save(provider),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFD4FF00),
-                  disabledBackgroundColor:
-                  const Color(0xFFD4FF00).withOpacity(0.4),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  elevation: 0,
-                ),
-                child: provider.isSaving
-                    ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.black,
-                  ),
-                )
-                    : Text(
-                  'SAVE',
-                  style: GoogleFonts.spaceMono(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black,
-                    letterSpacing: 2,
-                  ),
-                ),
-              ),
+                      onPressed: provider.isSaving
+                          ? null
+                          : () => _save(provider),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFD4FF00),
+                        disabledBackgroundColor: const Color(
+                          0xFFD4FF00,
+                        ).withValues(alpha: 0.4),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: provider.isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.black,
+                              ),
+                            )
+                          : Text(
+                              'SAVE',
+                              style: GoogleFonts.spaceMono(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black,
+                                letterSpacing: 2,
+                              ),
+                            ),
+                    ),
             ),
           ],
         ),
@@ -194,10 +192,7 @@ class _DarkTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(
-            color: Color(0xFFD4FF00),
-            width: 1.5,
-          ),
+          borderSide: const BorderSide(color: Color(0xFFD4FF00), width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,

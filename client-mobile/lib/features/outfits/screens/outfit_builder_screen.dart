@@ -69,8 +69,11 @@ class _AppBar extends StatelessWidget {
         children: [
           IconButton(
             onPressed: () => Navigator.maybePop(context),
-            icon: const Icon(Icons.arrow_back_ios_new,
-                color: Colors.white, size: 18),
+            icon: const Icon(
+              Icons.arrow_back_ios_new,
+              color: Colors.white,
+              size: 18,
+            ),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
           ),
@@ -142,9 +145,7 @@ class _ItemRow extends StatelessWidget {
                   style: GoogleFonts.spaceMono(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: isActive
-                        ? const Color(0xFFD4FF00)
-                        : Colors.white38,
+                    color: isActive ? const Color(0xFFD4FF00) : Colors.white38,
                     letterSpacing: 1.5,
                   ),
                 ),
@@ -253,7 +254,7 @@ class _RowContent extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
       itemCount: items.length,
-      separatorBuilder: (_, __) => const SizedBox(width: 10),
+      separatorBuilder: (context, index) => const SizedBox(width: 10),
       itemBuilder: (context, index) {
         final item = items[index];
         final isSelected = provider.isSelected(slot, item.id);
@@ -297,7 +298,7 @@ class _ItemCard extends StatelessWidget {
             width: isSelected ? 2 : 0.5,
           ),
           color: isSelected
-              ? const Color(0xFFD4FF00).withOpacity(0.06)
+              ? const Color(0xFFD4FF00).withValues(alpha: 0.06)
               : const Color(0xFF1a1a1a),
         ),
         child: Column(
@@ -328,7 +329,7 @@ class _ItemCard extends StatelessWidget {
                       ),
                     );
                   },
-                  errorBuilder: (_, __, ___) => Container(
+                  errorBuilder: (context, error, stackTrace) => Container(
                     color: const Color(0xFF2a2a2a),
                     child: const Icon(
                       Icons.broken_image_outlined,
@@ -380,10 +381,7 @@ class _ItemCard extends StatelessWidget {
 class _RowDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 0.5,
-      color: const Color(0xFF2a2a2a),
-    );
+    return Container(height: 0.5, color: const Color(0xFF2a2a2a));
   }
 }
 
@@ -400,9 +398,7 @@ class _SaveButton extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 20),
       decoration: const BoxDecoration(
-        border: Border(
-          top: BorderSide(color: Color(0xFF2a2a2a), width: 0.5),
-        ),
+        border: Border(top: BorderSide(color: Color(0xFF2a2a2a), width: 0.5)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -459,7 +455,9 @@ class _SaveButton extends StatelessWidget {
   String _hintText(OutfitBuilderProvider provider) {
     final missing = <String>[];
     if (provider.selectedItemFor(SlotType.tops) == null) missing.add('top');
-    if (provider.selectedItemFor(SlotType.bottoms) == null) missing.add('bottom');
+    if (provider.selectedItemFor(SlotType.bottoms) == null) {
+      missing.add('bottom');
+    }
     if (provider.selectedItemFor(SlotType.shoes) == null) missing.add('shoes');
     if (missing.isEmpty) return '';
     return 'Select a ${missing.join(', ')} to continue';
