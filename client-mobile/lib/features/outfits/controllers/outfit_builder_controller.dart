@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../core/network/api_client.dart';
-// Pour récupérer SignedImageApi et s3Key s'il y a lieu
 import '../../camera/api/signed_image_api.dart';
 import '../models/outfit_item_model.dart';
 import '../models/slot_type.dart';
@@ -14,7 +13,7 @@ class OutfitBuilderProvider extends ChangeNotifier {
   final ApiClient _apiClient;
   final SignedImageApi _signedImageApi = SignedImageApi();
 
-  // ── State ────────────────────────────────────────────────────────────────
+ 
 
   final Map<SlotType, List<Item>> _slotItems = {
     SlotType.tops: [],
