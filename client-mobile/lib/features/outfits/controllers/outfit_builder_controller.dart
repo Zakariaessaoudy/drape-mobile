@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/network/api_client.dart';
-import '../models/outfit_item_model.dart';
-import '../models/slot_type.dart';
+
+import '../../camera/api/signed_image_api.dart';
+
 
 class OutfitBuilderProvider extends ChangeNotifier {
   OutfitBuilderProvider({ApiClient? apiClient})
@@ -11,7 +12,7 @@ class OutfitBuilderProvider extends ChangeNotifier {
 
   final ApiClient _apiClient;
 
-  // ── State ────────────────────────────────────────────────────────────────
+ 
 
   final Map<SlotType, List<Item>> _slotItems = {
     SlotType.tops: [],
