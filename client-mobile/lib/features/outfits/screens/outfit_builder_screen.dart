@@ -6,7 +6,7 @@ import '../controllers/outfit_builder_controller.dart';
 import '../models/outfit_item_model.dart';
 import '../models/slot_type.dart';
 import '../widgets/save_outfit_sheet.dart';
-
+import '../../camera/widgets/signed_item_image.dart';
 class OutfitBuilderScreen extends StatelessWidget {
   const OutfitBuilderScreen({super.key});
 
@@ -309,34 +309,11 @@ class _ItemCard extends StatelessWidget {
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(11),
                 ),
-                child: Image.network(
-                  item.imageUrl,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
-                    return Container(
-                      color: const Color(0xFF2a2a2a),
-                      child: const Center(
-                        child: SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 1.5,
-                            color: Color(0xFFD4FF00),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                  errorBuilder: (_, __, ___) => Container(
-                    color: const Color(0xFF2a2a2a),
-                    child: const Icon(
-                      Icons.broken_image_outlined,
-                      color: Colors.white24,
-                      size: 20,
-                    ),
-                  ),
-                ),
+                child:
+                SignedItemImage(
+                  imageUrl: item.imageUrl,
+
+                )
               ),
             ),
 

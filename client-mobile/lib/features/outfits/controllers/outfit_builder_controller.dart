@@ -3,7 +3,7 @@ import '../../../core/network/api_client.dart';
 import '../../camera/api/signed_image_api.dart';
 import '../models/outfit_item_model.dart';
 import '../models/slot_type.dart';
-
+import '../data/outfit_api.dart';
 class OutfitBuilderProvider extends ChangeNotifier {
   OutfitBuilderProvider({ApiClient? apiClient})
       : _apiClient = apiClient ?? ApiClient() {
@@ -135,23 +135,19 @@ class OutfitBuilderProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _apiClient.post(
-        '/api/outfits',
-        body: {
-          'name': name,
-          'description': description,
-          'topId': _selectedId[SlotType.tops],
-          'bottomId': _selectedId[SlotType.bottoms],
-          'shoeId': _selectedId[SlotType.shoes],
-        },
+      await OutfitApi(_apiClient).createOutfit(
+        name: name,
+        description: description,
+        topId: _selectedId[SlotType.tops]!,
+        bottomId: _selectedId[SlotType.bottoms]!,
+        shoeId: _selectedId[SlotType.shoes]!,
       );
-
       _isSaving = false;
       _saved = true;
       notifyListeners();
       return true;
     } on ApiException catch (e) {
-      if (e.statusCode == 401) {
+      if (e.statusCode == 401 || e.statusCode == 403) {
         _saveError = 'Session expired. Please log in again.';
       } else {
         _saveError = 'Could not save outfit (${e.statusCode}).';

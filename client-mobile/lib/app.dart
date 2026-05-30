@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 
 import 'core/storage/token_storage.dart';
 import 'features/auth/screens/login_screen.dart';
-
+import 'features/outfits/screens/outfit_builder_screen.dart';
 class DrapeApp extends StatelessWidget {
   const DrapeApp({super.key, this.cameras = const []});
 
@@ -27,6 +27,7 @@ class DrapeApp extends StatelessWidget {
       routes: {
         '/login': (_) => const LoginScreen(),
         '/home': (_) => _SignedInScreen(cameras: cameras),
+        '/outfit-builder':  (_) => OutfitBuilderScreen(),
       },
     );
   }
@@ -68,7 +69,6 @@ class _SignedInScreen extends StatelessWidget {
     if (!context.mounted) return;
     Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -102,6 +102,14 @@ class _SignedInScreen extends StatelessWidget {
                     ),
                   );
                 },
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: 220,
+              child: NeonButton(
+                text: 'BUILD OUTFIT',
+                onPressed: () => Navigator.of(context).pushNamed('/outfit-builder'),
               ),
             ),
             const SizedBox(height: 16),
