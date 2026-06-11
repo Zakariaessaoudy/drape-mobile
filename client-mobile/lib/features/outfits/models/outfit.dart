@@ -38,6 +38,7 @@ class OutfitItem {
     required this.name,
     required this.category,
     required this.color,
+    required this.imageStatus,
     this.imageUrl,
   });
 
@@ -45,6 +46,7 @@ class OutfitItem {
   final String name;
   final String category;
   final String color;
+  final String imageStatus;
   final String? imageUrl;
 
   factory OutfitItem.fromJson(Map<String, dynamic> json) {
@@ -53,6 +55,7 @@ class OutfitItem {
       name: json['name'] as String? ?? '',
       category: json['category'] as String? ?? '',
       color: json['color'] as String? ?? '',
+      imageStatus: json['imageStatus'] as String? ?? '',
       imageUrl: json['imageUrl'] as String?,
     );
   }

@@ -1,90 +1,118 @@
 import 'package:client_mobile/core/constants/app_constants.dart';
 import 'package:client_mobile/features/camera/widgets/image_placeholder.dart';
 import 'package:client_mobile/features/camera/widgets/signed_item_image.dart';
-import 'package:client_mobile/features/outfits/data/outfit_api.dart';
 import 'package:client_mobile/features/outfits/models/outfit.dart';
+import 'package:client_mobile/features/outfits/state/outfit_list_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class OutfitsScreen extends StatefulWidget {
+class OutfitsScreen extends ConsumerStatefulWidget {
   const OutfitsScreen({super.key});
 
   @override
-  State<OutfitsScreen> createState() => _OutfitsScreenState();
+  ConsumerState<OutfitsScreen> createState() => _OutfitsScreenState();
 }
 
-class _OutfitsScreenState extends State<OutfitsScreen> {
-  late Future<List<Outfit>> _outfitsFuture;
-  final _outfitApi = OutfitApi();
-
+class _OutfitsScreenState extends ConsumerState<OutfitsScreen> {
   @override
   void initState() {
     super.initState();
-    _outfitsFuture = _outfitApi.fetchOutfits();
-  }
-
-  Future<void> _refresh() async {
-    final nextOutfits = _outfitApi.fetchOutfits();
-    setState(() {
-      _outfitsFuture = nextOutfits;
-    });
-    await nextOutfits;
+    Future.microtask(
+      () => ref.read(outfitListControllerProvider.notifier).loadIfNeeded(),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Outfit>>(
-      future: _outfitsFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(color: AuthColors.neon),
-          );
-        }
+    final state = ref.watch(outfitListControllerProvider);
+    final controller = ref.read(outfitListControllerProvider.notifier);
 
-        if (snapshot.hasError) {
-          return _MessageState(
-            message: snapshot.error.toString(),
-            onRetry: _refresh,
-          );
-        }
-
-        final outfits = snapshot.data ?? const [];
-        if (outfits.isEmpty) {
-          return _MessageState(
-            message: 'No saved outfits yet.',
-            onRetry: _refresh,
-          );
-        }
-
-        return RefreshIndicator(
-          color: AuthColors.neon,
-          backgroundColor: Colors.black,
-          onRefresh: _refresh,
-          child: ListView.separated(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 26, 20, 32),
-            itemCount: outfits.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 16),
-            itemBuilder: (context, index) {
-              return _OutfitCard(outfit: outfits[index]);
-            },
+    return RefreshIndicator(
+      color: AuthColors.neon,
+      backgroundColor: Colors.black,
+      onRefresh: controller.refresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(20, 26, 20, 32),
+        children: [
+          _BuildOutfitButton(
+            onTap: () => Navigator.of(context).pushNamed('/outfit-builder'),
           ),
-        );
-      },
+          const SizedBox(height: 18),
+          if (state.loading && state.outfits.isEmpty)
+            const SizedBox(
+              height: 260,
+              child: Center(
+                child: CircularProgressIndicator(color: AuthColors.neon),
+              ),
+            )
+          else if (state.error != null && state.outfits.isEmpty)
+            _MessageState(message: state.error!, onRetry: controller.refresh)
+          else if (state.outfits.isEmpty)
+            _MessageState(
+              message: 'No saved outfits yet.',
+              onRetry: controller.refresh,
+            )
+          else
+            for (final outfit in state.outfits) ...[
+              _OutfitCard(
+                outfit: outfit,
+                onDelete: () => controller.deleteOutfit(outfit.id),
+              ),
+              const SizedBox(height: 16),
+            ],
+        ],
+      ),
+    );
+  }
+}
+
+class _BuildOutfitButton extends StatelessWidget {
+  const _BuildOutfitButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: ElevatedButton.icon(
+        onPressed: onTap,
+        icon: const Icon(Icons.add, color: Colors.black),
+        label: const Text(
+          'BUILD OUTFIT',
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.6,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AuthColors.neon,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          elevation: 0,
+        ),
+      ),
     );
   }
 }
 
 class _OutfitCard extends StatelessWidget {
-  const _OutfitCard({required this.outfit});
+  const _OutfitCard({required this.outfit, required this.onDelete});
 
   final Outfit outfit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
-    final items = [outfit.top, outfit.bottom, outfit.shoe]
-        .whereType<OutfitItem>()
-        .toList();
+    final items = [
+      outfit.top,
+      outfit.bottom,
+      outfit.shoe,
+    ].whereType<OutfitItem>().toList();
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -95,13 +123,30 @@ class _OutfitCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            outfit.name.isEmpty ? 'Saved Outfit' : outfit.name,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  outfit.name.isEmpty ? 'Saved Outfit' : outfit.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: onDelete,
+                tooltip: 'Delete outfit',
+                icon: const Icon(
+                  Icons.delete_outline,
+                  color: Colors.white54,
+                  size: 21,
+                ),
+              ),
+            ],
           ),
           if (outfit.description != null && outfit.description!.isNotEmpty) ...[
             const SizedBox(height: 6),
@@ -155,28 +200,35 @@ class _MessageState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.style_outlined, color: AuthColors.neon, size: 42),
-            const SizedBox(height: 14),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white70),
-            ),
-            const SizedBox(height: 14),
-            TextButton(
-              onPressed: onRetry,
-              child: const Text(
-                'Retry',
-                style: TextStyle(color: AuthColors.neon),
+    return SizedBox(
+      height: 260,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.style_outlined,
+                color: AuthColors.neon,
+                size: 42,
               ),
-            ),
-          ],
+              const SizedBox(height: 14),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white70),
+              ),
+              const SizedBox(height: 14),
+              TextButton(
+                onPressed: onRetry,
+                child: const Text(
+                  'Retry',
+                  style: TextStyle(color: AuthColors.neon),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

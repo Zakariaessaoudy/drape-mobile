@@ -5,24 +5,23 @@ import 'package:client_mobile/shared/widgets/drape_logo.dart';
 import 'package:client_mobile/shared/widgets/field_label.dart';
 import 'package:client_mobile/shared/widgets/neon_button.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/auth_api.dart';
+import '../state/auth_controller.dart';
 import 'register_screen.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _authApi = AuthApi();
 
-  bool _loading = false;
   String? _error;
 
   @override
@@ -35,27 +34,26 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    setState(() => _error = null);
+    final success = await ref
+        .read(authControllerProvider.notifier)
+        .login(
+          email: _emailController.text,
+          password: _passwordController.text,
+        );
 
-    try {
-      await _authApi.login(
-        email: _emailController.text,
-        password: _passwordController.text,
-      );
-      if (!mounted) return;
+    if (!mounted) return;
+    if (success) {
       Navigator.of(context).pushReplacementNamed('/home');
-    } on AuthException catch (error) {
-      setState(() => _error = error.message);
-    } finally {
-      if (mounted) setState(() => _loading = false);
+    } else {
+      setState(() => _error = ref.read(authControllerProvider).error);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final loading = ref.watch(authControllerProvider).isLoading;
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: ImageBackground(
@@ -155,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 30),
                       NeonButton(
                         text: 'LOGIN',
-                        loading: _loading,
+                        loading: loading,
                         onPressed: _login,
                       ),
                       const SizedBox(height: 10),

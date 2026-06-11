@@ -1,62 +1,58 @@
+import 'package:client_mobile/features/camera/widgets/image_placeholder.dart';
+import 'package:client_mobile/features/camera/widgets/signed_item_image.dart';
+import 'package:client_mobile/features/outfits/state/outfit_builder_controller.dart';
+import 'package:client_mobile/features/outfits/state/outfit_list_controller.dart';
+import 'package:client_mobile/features/wardrobe/models/wardrobe_item.dart';
+import 'package:client_mobile/features/wardrobe/state/wardrobe_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../controllers/outfit_builder_controller.dart';
-import '../models/outfit_item_model.dart';
-import '../models/slot_type.dart';
-import '../widgets/save_outfit_sheet.dart';
-
-class OutfitBuilderScreen extends StatelessWidget {
+class OutfitBuilderScreen extends ConsumerStatefulWidget {
   const OutfitBuilderScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => OutfitBuilderProvider(),
-      child: const _OutfitBuilderBody(),
-    );
-  }
+  ConsumerState<OutfitBuilderScreen> createState() =>
+      _OutfitBuilderScreenState();
 }
 
-class _OutfitBuilderBody extends StatelessWidget {
-  const _OutfitBuilderBody();
+class _OutfitBuilderScreenState extends ConsumerState<OutfitBuilderScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(
+      () => ref.read(wardrobeControllerProvider.notifier).loadIfNeeded(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<OutfitBuilderProvider>();
+    final builder = ref.watch(outfitBuilderControllerProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0f0f0f),
+      backgroundColor: const Color(0xFF0F0F0F),
       body: SafeArea(
         child: Column(
           children: [
-            // ── App bar ──────────────────────────────────────────
-            _AppBar(),
-
-            // ── 3 horizontal rows ────────────────────────────────
+            const _AppBar(),
             Expanded(
               child: Column(
                 children: [
-                  _ItemRow(slot: SlotType.tops, provider: provider),
-                  _RowDivider(),
-                  _ItemRow(slot: SlotType.bottoms, provider: provider),
-                  _RowDivider(),
-                  _ItemRow(slot: SlotType.shoes, provider: provider),
+                  _ItemRow(slot: OutfitSlot.top),
+                  const _RowDivider(),
+                  _ItemRow(slot: OutfitSlot.bottom),
+                  const _RowDivider(),
+                  _ItemRow(slot: OutfitSlot.shoe),
                 ],
               ),
             ),
-
-            // ── Save button ───────────────────────────────────────
-            _SaveButton(provider: provider),
+            _SaveButton(canSave: builder.canSave),
           ],
         ),
       ),
     );
   }
 }
-
-// ── App bar ────────────────────────────────────────────────────────────────
 
 class _AppBar extends StatelessWidget {
   const _AppBar();
@@ -102,32 +98,27 @@ class _AppBar extends StatelessWidget {
   }
 }
 
-// ── Single horizontal row ─────────────────────────────────────────────────
+class _ItemRow extends ConsumerWidget {
+  const _ItemRow({required this.slot});
 
-class _ItemRow extends StatelessWidget {
-  const _ItemRow({required this.slot, required this.provider});
-
-  final SlotType slot;
-  final OutfitBuilderProvider provider;
+  final OutfitSlot slot;
 
   @override
-  Widget build(BuildContext context) {
-    final isLoading = provider.isLoadingSlot(slot);
-    final error = provider.errorFor(slot);
-    final items = provider.itemsFor(slot);
-    final selected = provider.selectedItemFor(slot);
-    final isActive = selected != null;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final wardrobe = ref.watch(wardrobeControllerProvider);
+    final builder = ref.watch(outfitBuilderControllerProvider);
+    final controller = ref.read(outfitBuilderControllerProvider.notifier);
+    final items = ref.watch(outfitSlotItemsProvider(slot));
+    final selected = _selectedItem(items, builder.selectedIdFor(slot));
 
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Row header ─────────────────────────────────────────
           Container(
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
             child: Row(
               children: [
-                // Neon dot when slot is filled
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   width: 6,
@@ -135,9 +126,9 @@ class _ItemRow extends StatelessWidget {
                   margin: const EdgeInsets.only(right: 8),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isActive
-                        ? const Color(0xFFD4FF00)
-                        : const Color(0xFF2a2a2a),
+                    color: selected == null
+                        ? const Color(0xFF2A2A2A)
+                        : const Color(0xFFD4FF00),
                   ),
                 ),
                 Text(
@@ -145,7 +136,9 @@ class _ItemRow extends StatelessWidget {
                   style: GoogleFonts.spaceMono(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: isActive ? const Color(0xFFD4FF00) : Colors.white38,
+                    color: selected == null
+                        ? Colors.white38
+                        : const Color(0xFFD4FF00),
                     letterSpacing: 1.5,
                   ),
                 ),
@@ -153,7 +146,7 @@ class _ItemRow extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '— ${selected.name}',
+                      '- ${selected.name}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -166,41 +159,54 @@ class _ItemRow extends StatelessWidget {
               ],
             ),
           ),
-
-          // ── Horizontal scroll list ─────────────────────────────
           Expanded(
             child: _RowContent(
-              slot: slot,
-              provider: provider,
-              isLoading: isLoading,
-              error: error,
+              loading: wardrobe.loading && !wardrobe.loaded,
+              error: wardrobe.error,
               items: items,
+              slot: slot,
+              selectedId: builder.selectedIdFor(slot),
+              onRetry: () =>
+                  ref.read(wardrobeControllerProvider.notifier).refresh(),
+              onSelect: (itemId) => controller.selectItem(slot, itemId),
             ),
           ),
         ],
       ),
     );
   }
+
+  WardrobeItem? _selectedItem(List<WardrobeItem> items, String? selectedId) {
+    if (selectedId == null) return null;
+    for (final item in items) {
+      if (item.id == selectedId) return item;
+    }
+    return null;
+  }
 }
 
 class _RowContent extends StatelessWidget {
   const _RowContent({
-    required this.slot,
-    required this.provider,
-    required this.isLoading,
+    required this.loading,
     required this.error,
     required this.items,
+    required this.slot,
+    required this.selectedId,
+    required this.onRetry,
+    required this.onSelect,
   });
 
-  final SlotType slot;
-  final OutfitBuilderProvider provider;
-  final bool isLoading;
+  final bool loading;
   final String? error;
-  final List<Item> items;
+  final List<WardrobeItem> items;
+  final OutfitSlot slot;
+  final String? selectedId;
+  final Future<void> Function() onRetry;
+  final ValueChanged<String> onSelect;
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
+    if (loading) {
       return const Center(
         child: SizedBox(
           width: 20,
@@ -213,7 +219,7 @@ class _RowContent extends StatelessWidget {
       );
     }
 
-    if (error != null) {
+    if (error != null && items.isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -227,7 +233,7 @@ class _RowContent extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             GestureDetector(
-              onTap: () => provider.retrySlot(slot),
+              onTap: onRetry,
               child: Text(
                 'Retry',
                 style: GoogleFonts.spaceMono(
@@ -244,7 +250,7 @@ class _RowContent extends StatelessWidget {
     if (items.isEmpty) {
       return Center(
         child: Text(
-          'No ${slot.label.toLowerCase()} found',
+          'No ready ${slot.label.toLowerCase()} found',
           style: const TextStyle(color: Colors.white24, fontSize: 11),
         ),
       );
@@ -257,33 +263,29 @@ class _RowContent extends StatelessWidget {
       separatorBuilder: (context, index) => const SizedBox(width: 10),
       itemBuilder: (context, index) {
         final item = items[index];
-        final isSelected = provider.isSelected(slot, item.id);
         return _ItemCard(
           item: item,
-          isSelected: isSelected,
-          onTap: () => provider.selectItem(slot, item.id),
+          selected: selectedId == item.id,
+          onTap: () => onSelect(item.id),
         );
       },
     );
   }
 }
 
-// ── Item card ──────────────────────────────────────────────────────────────
-
 class _ItemCard extends StatelessWidget {
   const _ItemCard({
     required this.item,
-    required this.isSelected,
+    required this.selected,
     required this.onTap,
   });
 
-  final Item item;
-  final bool isSelected;
+  final WardrobeItem item;
+  final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    // Card width fixed — height fills the row
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -292,56 +294,26 @@ class _ItemCard extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected
-                ? const Color(0xFFD4FF00)
-                : const Color(0xFF2a2a2a),
-            width: isSelected ? 2 : 0.5,
+            color: selected ? const Color(0xFFD4FF00) : const Color(0xFF2A2A2A),
+            width: selected ? 2 : 0.5,
           ),
-          color: isSelected
+          color: selected
               ? const Color(0xFFD4FF00).withValues(alpha: 0.06)
-              : const Color(0xFF1a1a1a),
+              : const Color(0xFF1A1A1A),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Image — fills most of the card
             Expanded(
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(11),
                 ),
-                child: Image.network(
-                  item.imageUrl,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
-                    return Container(
-                      color: const Color(0xFF2a2a2a),
-                      child: const Center(
-                        child: SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 1.5,
-                            color: Color(0xFFD4FF00),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    color: const Color(0xFF2a2a2a),
-                    child: const Icon(
-                      Icons.broken_image_outlined,
-                      color: Colors.white24,
-                      size: 20,
-                    ),
-                  ),
-                ),
+                child: item.imageUrl != null && item.imageUrl!.isNotEmpty
+                    ? SignedItemImage(imageUrl: item.imageUrl!)
+                    : ImagePlaceholder(text: item.imageStatus),
               ),
             ),
-
-            // Name
             Padding(
               padding: const EdgeInsets.fromLTRB(6, 4, 6, 6),
               child: Row(
@@ -354,13 +326,13 @@ class _ItemCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.w500,
-                        color: isSelected
+                        color: selected
                             ? const Color(0xFFD4FF00)
                             : Colors.white60,
                       ),
                     ),
                   ),
-                  if (isSelected)
+                  if (selected)
                     const Icon(
                       Icons.check_circle,
                       color: Color(0xFFD4FF00),
@@ -376,74 +348,56 @@ class _ItemCard extends StatelessWidget {
   }
 }
 
-// ── Row divider ────────────────────────────────────────────────────────────
-
-class _RowDivider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(height: 0.5, color: const Color(0xFF2a2a2a));
-  }
-}
-
-// ── Save button ────────────────────────────────────────────────────────────
-
 class _SaveButton extends StatelessWidget {
-  const _SaveButton({required this.provider});
-  final OutfitBuilderProvider provider;
+  const _SaveButton({required this.canSave});
+
+  final bool canSave;
 
   @override
   Widget build(BuildContext context) {
-    final canSave = provider.canSave;
-
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 20),
       decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: Color(0xFF2a2a2a), width: 0.5)),
+        border: Border(top: BorderSide(color: Color(0xFF2A2A2A), width: 0.5)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (!canSave)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
+            const Padding(
+              padding: EdgeInsets.only(bottom: 10),
               child: Text(
-                _hintText(provider),
-                style: const TextStyle(color: Colors.white38, fontSize: 11),
+                'Select a top, bottom, and shoes to continue',
+                style: TextStyle(color: Colors.white38, fontSize: 11),
                 textAlign: TextAlign.center,
               ),
             ),
           SizedBox(
             width: double.infinity,
             height: 52,
-            child: ElevatedButton(
-              onPressed: canSave ? () => SaveOutfitSheet.show(context) : null,
+            child: ElevatedButton.icon(
+              onPressed: canSave ? () => _SaveOutfitSheet.show(context) : null,
+              icon: Icon(
+                Icons.bookmark_add_outlined,
+                color: canSave ? Colors.black : Colors.white24,
+                size: 18,
+              ),
+              label: Text(
+                'SAVE OUTFIT',
+                style: GoogleFonts.spaceMono(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: canSave ? Colors.black : Colors.white24,
+                  letterSpacing: 2.5,
+                ),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFD4FF00),
-                disabledBackgroundColor: const Color(0xFF2a2a2a),
+                disabledBackgroundColor: const Color(0xFF2A2A2A),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
                 elevation: 0,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.bookmark_add_outlined,
-                    color: canSave ? Colors.black : Colors.white24,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'SAVE OUTFIT',
-                    style: GoogleFonts.spaceMono(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: canSave ? Colors.black : Colors.white24,
-                      letterSpacing: 2.5,
-                    ),
-                  ),
-                ],
               ),
             ),
           ),
@@ -451,15 +405,214 @@ class _SaveButton extends StatelessWidget {
       ),
     );
   }
+}
 
-  String _hintText(OutfitBuilderProvider provider) {
-    final missing = <String>[];
-    if (provider.selectedItemFor(SlotType.tops) == null) missing.add('top');
-    if (provider.selectedItemFor(SlotType.bottoms) == null) {
-      missing.add('bottom');
+class _SaveOutfitSheet extends ConsumerStatefulWidget {
+  const _SaveOutfitSheet();
+
+  static Future<void> show(BuildContext context) {
+    return showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => const _SaveOutfitSheet(),
+    );
+  }
+
+  @override
+  ConsumerState<_SaveOutfitSheet> createState() => _SaveOutfitSheetState();
+}
+
+class _SaveOutfitSheetState extends ConsumerState<_SaveOutfitSheet> {
+  final _nameController = TextEditingController(text: 'My Outfit');
+  final _descriptionController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) return;
+
+    final builder = ref.read(outfitBuilderControllerProvider);
+    final builderController = ref.read(
+      outfitBuilderControllerProvider.notifier,
+    );
+    final outfitController = ref.read(outfitListControllerProvider.notifier);
+
+    builderController.setSaving(true);
+    final success = await outfitController.createOutfit(
+      name: name,
+      description: _descriptionController.text,
+      topId: builder.selectedTopId!,
+      bottomId: builder.selectedBottomId!,
+      shoeId: builder.selectedShoeId!,
+    );
+
+    if (!mounted) return;
+
+    builderController.setSaving(false);
+    if (success) {
+      Navigator.of(context).pop();
+      Navigator.of(context).maybePop();
+    } else {
+      builderController.setError(
+        ref.read(outfitListControllerProvider).error ?? 'Could not save outfit',
+      );
     }
-    if (provider.selectedItemFor(SlotType.shoes) == null) missing.add('shoes');
-    if (missing.isEmpty) return '';
-    return 'Select a ${missing.join(', ')} to continue';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final builder = ref.watch(outfitBuilderControllerProvider);
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottom),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Save Outfit',
+              style: GoogleFonts.spaceMono(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Give your outfit a name',
+              style: TextStyle(color: Colors.white38, fontSize: 13),
+            ),
+            const SizedBox(height: 20),
+            _DarkTextField(
+              controller: _nameController,
+              hintText: 'Outfit name...',
+              autofocus: true,
+            ),
+            const SizedBox(height: 12),
+            _DarkTextField(
+              controller: _descriptionController,
+              hintText: 'Description (optional)...',
+            ),
+            if (builder.error != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                builder.error!,
+                style: const TextStyle(color: Color(0xFFFF6B6B), fontSize: 13),
+              ),
+            ],
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: builder.isSaving ? null : _save,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFD4FF00),
+                  disabledBackgroundColor: const Color(
+                    0xFFD4FF00,
+                  ).withValues(alpha: 0.4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 0,
+                ),
+                child: builder.isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.black,
+                        ),
+                      )
+                    : Text(
+                        'SAVE',
+                        style: GoogleFonts.spaceMono(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.black,
+                          letterSpacing: 2,
+                        ),
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DarkTextField extends StatelessWidget {
+  const _DarkTextField({
+    required this.controller,
+    required this.hintText,
+    this.autofocus = false,
+  });
+
+  final TextEditingController controller;
+  final String hintText;
+  final bool autofocus;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      autofocus: autofocus,
+      style: const TextStyle(color: Colors.white, fontSize: 15),
+      cursorColor: const Color(0xFFD4FF00),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: const Color(0xFF2A2A2A),
+        hintText: hintText,
+        hintStyle: const TextStyle(color: Colors.white24),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFD4FF00), width: 1.5),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+      ),
+    );
+  }
+}
+
+class _RowDivider extends StatelessWidget {
+  const _RowDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(height: 0.5, color: const Color(0xFF2A2A2A));
   }
 }

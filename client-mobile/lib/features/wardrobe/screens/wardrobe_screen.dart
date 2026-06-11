@@ -1,11 +1,12 @@
 import 'package:client_mobile/core/constants/app_constants.dart';
 import 'package:client_mobile/features/camera/widgets/image_placeholder.dart';
 import 'package:client_mobile/features/camera/widgets/signed_item_image.dart';
-import 'package:client_mobile/features/wardrobe/data/item_api.dart';
 import 'package:client_mobile/features/wardrobe/models/wardrobe_item.dart';
+import 'package:client_mobile/features/wardrobe/state/wardrobe_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class WardrobeScreen extends StatefulWidget {
+class WardrobeScreen extends ConsumerWidget {
   const WardrobeScreen({
     super.key,
     required this.selectedFilter,
@@ -16,92 +17,25 @@ class WardrobeScreen extends StatefulWidget {
   final VoidCallback? onAddItem;
 
   @override
-  State<WardrobeScreen> createState() => _WardrobeScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final wardrobe = ref.watch(wardrobeControllerProvider);
+    final items = wardrobe.byCategory(selectedFilter);
 
-class _WardrobeScreenState extends State<WardrobeScreen> {
-  late Future<List<WardrobeItem>> _itemsFuture;
-  final _itemApi = ItemApi();
-
-  @override
-  void initState() {
-    super.initState();
-    _itemsFuture = _itemApi.fetchItems(category: widget.selectedFilter);
-  }
-
-  @override
-  void didUpdateWidget(covariant WardrobeScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.selectedFilter == widget.selectedFilter) return;
-
-    _itemsFuture = _itemApi.fetchItems(category: widget.selectedFilter);
-  }
-
-  Future<void> _refresh() async {
-    final nextItems = _itemApi.fetchItems(category: widget.selectedFilter);
-    setState(() {
-      _itemsFuture = nextItems;
-    });
-    await nextItems;
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Stack(
       children: [
-        FutureBuilder<List<WardrobeItem>>(
-          future: _itemsFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(color: AuthColors.neon),
-              );
-            }
-
-            if (snapshot.hasError) {
-              return _MessageState(
-                icon: Icons.error_outline,
-                message: snapshot.error.toString(),
-                onRetry: _refresh,
-              );
-            }
-
-            final items = snapshot.data ?? const [];
-            if (items.isEmpty) {
-              return _MessageState(
-                icon: Icons.checkroom_outlined,
-                message: 'No items found for this filter.',
-                onRetry: _refresh,
-              );
-            }
-
-            return RefreshIndicator(
-              color: AuthColors.neon,
-              backgroundColor: Colors.black,
-              onRefresh: _refresh,
-              child: GridView.builder(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(20, 28, 20, 120),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 22,
-                  childAspectRatio: 0.84,
-                ),
-                itemCount: items.length,
-                itemBuilder: (context, index) {
-                  return _WardrobeItemCard(item: items[index]);
-                },
-              ),
-            );
-          },
+        _WardrobeContent(
+          loading: wardrobe.loading,
+          error: wardrobe.error,
+          items: items,
+          onRefresh: () =>
+              ref.read(wardrobeControllerProvider.notifier).refresh(),
         ),
-        if (widget.onAddItem != null)
+        if (onAddItem != null)
           Positioned(
             right: 22,
             bottom: 24,
             child: GestureDetector(
-              onTap: widget.onAddItem,
+              onTap: onAddItem,
               child: Container(
                 width: 58,
                 height: 58,
@@ -116,15 +50,70 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.add,
-                  color: Colors.black,
-                  size: 34,
-                ),
+                child: const Icon(Icons.add, color: Colors.black, size: 34),
               ),
             ),
           ),
       ],
+    );
+  }
+}
+
+class _WardrobeContent extends StatelessWidget {
+  const _WardrobeContent({
+    required this.loading,
+    required this.error,
+    required this.items,
+    required this.onRefresh,
+  });
+
+  final bool loading;
+  final String? error;
+  final List<WardrobeItem> items;
+  final Future<void> Function() onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading && items.isEmpty) {
+      return const Center(
+        child: CircularProgressIndicator(color: AuthColors.neon),
+      );
+    }
+
+    if (error != null && items.isEmpty) {
+      return _MessageState(
+        icon: Icons.error_outline,
+        message: error!,
+        onRetry: onRefresh,
+      );
+    }
+
+    if (items.isEmpty) {
+      return _MessageState(
+        icon: Icons.checkroom_outlined,
+        message: 'No items found for this filter.',
+        onRetry: onRefresh,
+      );
+    }
+
+    return RefreshIndicator(
+      color: AuthColors.neon,
+      backgroundColor: Colors.black,
+      onRefresh: onRefresh,
+      child: GridView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(20, 28, 20, 120),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 22,
+          childAspectRatio: 0.84,
+        ),
+        itemCount: items.length,
+        itemBuilder: (context, index) {
+          return _WardrobeItemCard(item: items[index]);
+        },
+      ),
     );
   }
 }

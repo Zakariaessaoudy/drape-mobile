@@ -33,6 +33,67 @@ class OutfitApi {
       throw const OutfitApiException('Could not fetch outfits');
     }
   }
+
+  Future<Outfit> createOutfit({
+    required String name,
+    required String description,
+    required String topId,
+    required String bottomId,
+    required String shoeId,
+  }) async {
+    try {
+      final json =
+          await _apiClient.post(
+                ApiConstants.outfits,
+                body: {
+                  'name': name.trim(),
+                  'description': description.trim(),
+                  'topId': topId,
+                  'bottomId': bottomId,
+                  'shoeId': shoeId,
+                },
+              )
+              as Map<String, dynamic>;
+
+      return Outfit.fromJson(json);
+    } on ApiException catch (error) {
+      if (error.statusCode == 401 || error.statusCode == 403) {
+        throw const OutfitApiException(
+          'Session expired. Please log in again.',
+          sessionExpired: true,
+        );
+      }
+
+      throw OutfitApiException('Could not save outfit: ${error.message}');
+    } on http.ClientException {
+      throw OutfitApiException(
+        'Cannot reach Wardrobe API at ${_apiClient.baseUrl}',
+      );
+    } catch (_) {
+      throw const OutfitApiException('Could not save outfit');
+    }
+  }
+
+  Future<void> deleteOutfit(String outfitId) async {
+    try {
+      await _apiClient.delete('${ApiConstants.outfits}/$outfitId');
+    } on ApiException catch (error) {
+      if (error.statusCode == 401 || error.statusCode == 403) {
+        throw const OutfitApiException(
+          'Session expired. Please log in again.',
+          sessionExpired: true,
+        );
+      }
+
+      throw OutfitApiException('Could not delete outfit: ${error.message}');
+    } on http.ClientException {
+      throw OutfitApiException(
+        'Cannot reach Wardrobe API at ${_apiClient.baseUrl}',
+      );
+    } catch (_) {
+      throw const OutfitApiException('Could not delete outfit');
+    }
+  }
 }
 
 class OutfitApiException implements Exception {

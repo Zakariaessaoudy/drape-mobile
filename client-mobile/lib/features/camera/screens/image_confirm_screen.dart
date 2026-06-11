@@ -6,9 +6,11 @@ import 'package:client_mobile/core/constants/app_constants.dart';
 import 'package:client_mobile/features/camera/models/create_camera_item_request.dart';
 import 'package:client_mobile/features/camera/state/add_camera_item_controller.dart';
 import 'package:client_mobile/features/camera/widgets/category_picker.dart';
+import 'package:client_mobile/features/wardrobe/state/wardrobe_controller.dart';
 import 'package:client_mobile/shared/widgets/auth_text_field.dart';
 import 'package:client_mobile/shared/widgets/field_label.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:provider/provider.dart';
 
 class ImageConfirmScreen extends StatelessWidget {
@@ -25,16 +27,16 @@ class ImageConfirmScreen extends StatelessWidget {
   }
 }
 
-class _ImageConfirmView extends StatefulWidget {
+class _ImageConfirmView extends ConsumerStatefulWidget {
   const _ImageConfirmView({required this.imagePath});
 
   final String imagePath;
 
   @override
-  State<_ImageConfirmView> createState() => _ImageConfirmViewState();
+  ConsumerState<_ImageConfirmView> createState() => _ImageConfirmViewState();
 }
 
-class _ImageConfirmViewState extends State<_ImageConfirmView> {
+class _ImageConfirmViewState extends ConsumerState<_ImageConfirmView> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _colorController = TextEditingController();
@@ -62,6 +64,8 @@ class _ImageConfirmViewState extends State<_ImageConfirmView> {
     if (!mounted) return;
 
     if (created) {
+      await ref.read(wardrobeControllerProvider.notifier).refresh();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Item added. Image processing started.')),
       );

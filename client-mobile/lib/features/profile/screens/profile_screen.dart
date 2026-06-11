@@ -1,11 +1,13 @@
 import 'package:client_mobile/core/constants/app_constants.dart';
 import 'package:client_mobile/core/storage/token_storage.dart';
-import 'package:client_mobile/features/outfits/data/outfit_api.dart';
-import 'package:client_mobile/features/wardrobe/data/item_api.dart';
+import 'package:client_mobile/features/auth/state/auth_controller.dart';
+import 'package:client_mobile/features/outfits/state/outfit_list_controller.dart';
+import 'package:client_mobile/features/wardrobe/state/wardrobe_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({
     super.key,
     this.onOpenWardrobe,
@@ -18,10 +20,10 @@ class ProfileScreen extends StatefulWidget {
   final Future<void> Function()? onSignOut;
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   late Future<_ProfileViewData> _profileFuture;
 
   @override
@@ -32,41 +34,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _refresh() async {
     final nextProfile = _loadProfile();
+    final wardrobeRefresh = ref
+        .read(wardrobeControllerProvider.notifier)
+        .refresh();
+    final outfitRefresh = ref
+        .read(outfitListControllerProvider.notifier)
+        .refresh();
     setState(() {
       _profileFuture = nextProfile;
     });
-    await nextProfile;
+    await Future.wait([nextProfile, wardrobeRefresh, outfitRefresh]);
   }
 
   Future<_ProfileViewData> _loadProfile() async {
     final userInfo = await TokenStorage().readUserInfo();
-    final counts = await _loadCounts();
 
     return _ProfileViewData(
       name: userInfo.displayName,
       email: userInfo.email,
       planLabel: 'PRO PLAN ACTIVE',
-      counts: counts,
     );
-  }
-
-  Future<_ProfileCounts> _loadCounts() async {
-    final itemCount = await _safeCount(() => ItemApi().fetchItems());
-    final outfitCount = await _safeCount(() => OutfitApi().fetchOutfits());
-
-    return _ProfileCounts(
-      items: itemCount,
-      outfits: outfitCount,
-      tryOns: 0,
-    );
-  }
-
-  Future<int> _safeCount<T>(Future<List<T>> Function() loader) async {
-    try {
-      return (await loader()).length;
-    } catch (_) {
-      return 0;
-    }
   }
 
   Future<void> _handleSignOut() async {
@@ -75,11 +62,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return;
     }
 
-    await TokenStorage().clearToken();
+    await ref.read(authControllerProvider.notifier).logout();
   }
 
   @override
   Widget build(BuildContext context) {
+    final wardrobe = ref.watch(wardrobeControllerProvider);
+    final outfitList = ref.watch(outfitListControllerProvider);
+    final counts = _ProfileCounts(
+      items: wardrobe.items.length,
+      outfits: outfitList.outfits.length,
+      tryOns: 0,
+    );
+
     return FutureBuilder<_ProfileViewData>(
       future: _profileFuture,
       builder: (context, snapshot) {
@@ -134,7 +129,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 34),
-                    _StatsRow(counts: profile.counts),
+                    _StatsRow(counts: counts),
                     const SizedBox(height: 32),
                     _ActionPanel(
                       onOpenWardrobe: widget.onOpenWardrobe,
@@ -201,10 +196,7 @@ class _ProfileAvatar extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF3D3D3D),
-                Color(0xFF111111),
-              ],
+              colors: [Color(0xFF3D3D3D), Color(0xFF111111)],
             ),
           ),
           child: Center(
@@ -233,24 +225,15 @@ class _StatsRow extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: _StatCard(
-            value: counts.items.toString(),
-            label: 'ITEMS',
-          ),
+          child: _StatCard(value: counts.items.toString(), label: 'ITEMS'),
         ),
         const SizedBox(width: 14),
         Expanded(
-          child: _StatCard(
-            value: counts.outfits.toString(),
-            label: 'OUTFITS',
-          ),
+          child: _StatCard(value: counts.outfits.toString(), label: 'OUTFITS'),
         ),
         const SizedBox(width: 14),
         Expanded(
-          child: _StatCard(
-            value: counts.tryOns.toString(),
-            label: 'TRY-ONS',
-          ),
+          child: _StatCard(value: counts.tryOns.toString(), label: 'TRY-ONS'),
         ),
       ],
     );
@@ -326,15 +309,9 @@ class _ActionPanel extends StatelessWidget {
             onTap: onOpenOutfits,
           ),
           const _ActionDivider(),
-          const _ActionTile(
-            icon: Icons.tune,
-            label: 'Preferences',
-          ),
+          const _ActionTile(icon: Icons.tune, label: 'Preferences'),
           const _ActionDivider(),
-          const _ActionTile(
-            icon: Icons.settings_outlined,
-            label: 'Settings',
-          ),
+          const _ActionTile(icon: Icons.settings_outlined, label: 'Settings'),
         ],
       ),
     );
@@ -342,11 +319,7 @@ class _ActionPanel extends StatelessWidget {
 }
 
 class _ActionTile extends StatelessWidget {
-  const _ActionTile({
-    required this.icon,
-    required this.label,
-    this.onTap,
-  });
+  const _ActionTile({required this.icon, required this.label, this.onTap});
 
   final IconData icon;
   final String label;
@@ -368,11 +341,7 @@ class _ActionTile extends StatelessWidget {
                 color: const Color(0xFF282828),
                 borderRadius: BorderRadius.circular(7),
               ),
-              child: Icon(
-                icon,
-                color: AuthColors.neon,
-                size: 19,
-              ),
+              child: Icon(icon, color: AuthColors.neon, size: 19),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -386,11 +355,7 @@ class _ActionTile extends StatelessWidget {
                 ),
               ),
             ),
-            const Icon(
-              Icons.chevron_right,
-              color: Color(0xFFA7A7A7),
-              size: 24,
-            ),
+            const Icon(Icons.chevron_right, color: Color(0xFFA7A7A7), size: 24),
           ],
         ),
       ),
@@ -403,11 +368,7 @@ class _ActionDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Divider(
-      color: Color(0xFF252525),
-      height: 1,
-      indent: 58,
-    );
+    return const Divider(color: Color(0xFF252525), height: 1, indent: 58);
   }
 }
 
@@ -416,13 +377,11 @@ class _ProfileViewData {
     required this.name,
     required this.email,
     required this.planLabel,
-    required this.counts,
   });
 
   final String name;
   final String? email;
   final String planLabel;
-  final _ProfileCounts counts;
 
   String get initials {
     final words = name
@@ -445,7 +404,6 @@ class _ProfileViewData {
       name: 'CoutureMember',
       email: null,
       planLabel: 'PRO PLAN ACTIVE',
-      counts: _ProfileCounts(items: 0, outfits: 0, tryOns: 0),
     );
   }
 }
