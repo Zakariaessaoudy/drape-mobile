@@ -1,5 +1,4 @@
 import 'package:client_mobile/core/constants/app_constants.dart';
-import 'package:client_mobile/core/storage/token_storage.dart';
 import 'package:client_mobile/features/navigation/screens/overlay_feature_screens.dart';
 import 'package:client_mobile/shared/widgets/animated_popup_menu.dart';
 import 'package:client_mobile/shared/widgets/custom_menu_tile.dart';
@@ -42,7 +41,7 @@ class _AppScaffoldState extends State<AppScaffold> {
             selectedFilter: widget.selectedCategoryFilter,
             onFilterChanged: widget.onCategoryFilterChanged,
             onMenuPressed: _showAppMenu,
-            onProfilePressed: _showProfileMenu,
+            onProfilePressed: () => widget.onNavTap(3),
           ),
           Expanded(child: widget.body),
         ],
@@ -50,28 +49,6 @@ class _AppScaffoldState extends State<AppScaffold> {
       bottomNavigationBar: _BottomNavBar(
         currentIndex: widget.currentNavIndex,
         onTap: widget.onNavTap,
-      ),
-    );
-  }
-
-  Future<void> _showProfileMenu() async {
-    HapticFeedback.selectionClick();
-    await AnimatedPopupMenu.show<void>(
-      context: context,
-      barrierLabel: 'Dismiss profile menu',
-      alignment: Alignment.topRight,
-      slideFrom: const Offset(0, -0.06),
-      margin: const EdgeInsets.fromLTRB(72, 72, 14, 0),
-      width: 286,
-      builder: (context) => _ProfileMenuContent(
-        onSelected: (routeName) {
-          Navigator.of(context).pop();
-          _openRoute(routeName);
-        },
-        onLogout: () async {
-          Navigator.of(context).pop();
-          await _confirmLogout();
-        },
       ),
     );
   }
@@ -93,60 +70,6 @@ class _AppScaffoldState extends State<AppScaffold> {
         },
       ),
     );
-  }
-
-  Future<void> _confirmLogout() async {
-    final confirmed =
-        await showDialog<bool>(
-          context: context,
-          barrierDismissible: true,
-          builder: (dialogContext) {
-            return AlertDialog(
-              backgroundColor: const Color(0xFF111111),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-                side: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
-              ),
-              title: const Text(
-                'Logout',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              content: Text(
-                'Do you want to sign out of DRAPE?',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.72)),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: const Text(
-                    'Cancel',
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(true),
-                  child: const Text(
-                    'Logout',
-                    style: TextStyle(
-                      color: Color(0xFFFF7A7A),
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        ) ??
-        false;
-
-    if (!confirmed) return;
-
-    await TokenStorage().clearToken();
-    if (!mounted) return;
-    Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
   }
 
   void _openRoute(String routeName) {
@@ -250,138 +173,6 @@ class _TopNavBar extends StatelessWidget {
   }
 }
 
-class _ProfileMenuContent extends StatelessWidget {
-  const _ProfileMenuContent({
-    required this.onSelected,
-    required this.onLogout,
-  });
-
-  final ValueChanged<String> onSelected;
-  final Future<void> Function() onLogout;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FutureBuilder<SavedUserInfo>(
-            future: TokenStorage().readUserInfo(),
-            builder: (context, snapshot) {
-              final user = snapshot.data;
-              return Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF161616),
-                  borderRadius: BorderRadius.circular(22),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: AuthColors.neon.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Center(
-                        child: Text(
-                          _initialsFor(user?.displayName ?? 'DR'),
-                          style: const TextStyle(
-                            color: AuthColors.neon,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            user?.displayName ?? 'Drape Member',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            user?.email ?? 'Your account space',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.6),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 14),
-          CustomMenuTile(
-            icon: Icons.person_outline,
-            label: 'My Profile',
-            semanticLabel: 'Open My Profile',
-            onTap: () => onSelected('/profile'),
-          ),
-          CustomMenuTile(
-            icon: Icons.auto_awesome,
-            label: 'Saved Outfits',
-            semanticLabel: 'Open Saved Outfits',
-            onTap: () => onSelected('/saved-outfits'),
-          ),
-          CustomMenuTile(
-            icon: Icons.favorite_outline,
-            label: 'Favorites',
-            semanticLabel: 'Open Favorites',
-            onTap: () => onSelected(FavoritesScreen.routeName),
-          ),
-          CustomMenuTile(
-            icon: Icons.tune,
-            label: 'Style Preferences',
-            semanticLabel: 'Open Style Preferences',
-            onTap: () => onSelected(StylePreferencesScreen.routeName),
-          ),
-          const SizedBox(height: 4),
-          CustomMenuTile(
-            icon: Icons.logout_rounded,
-            label: 'Logout',
-            semanticLabel: 'Logout of DRAPE',
-            destructive: true,
-            onTap: () {
-              onLogout();
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _initialsFor(String text) {
-    final parts = text
-        .trim()
-        .split(RegExp(r'\s+'))
-        .where((part) => part.isNotEmpty)
-        .toList();
-    if (parts.isEmpty) return 'DR';
-    if (parts.length == 1) {
-      final end = parts.first.length < 2 ? parts.first.length : 2;
-      return parts.first.substring(0, end).toUpperCase();
-    }
-    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
-  }
-}
-
 class _AppMenuContent extends StatelessWidget {
   const _AppMenuContent({required this.onSelected});
 
@@ -403,7 +194,10 @@ class _AppMenuContent extends StatelessWidget {
                   color: AuthColors.neon.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Icon(Icons.dashboard_customize, color: AuthColors.neon),
+                child: const Icon(
+                  Icons.dashboard_customize,
+                  color: AuthColors.neon,
+                ),
               ),
               const SizedBox(width: 12),
               const Expanded(
@@ -444,7 +238,8 @@ class _AppMenuContent extends StatelessWidget {
                         icon: Icons.hourglass_top_rounded,
                         label: 'Processing Items',
                         semanticLabel: 'Open Processing Items',
-                        onTap: () => onSelected(ProcessingItemsScreen.routeName),
+                        onTap: () =>
+                            onSelected(ProcessingItemsScreen.routeName),
                       ),
                       CustomMenuTile(
                         icon: Icons.history_rounded,
@@ -456,7 +251,8 @@ class _AppMenuContent extends StatelessWidget {
                         icon: Icons.analytics_outlined,
                         label: 'Wardrobe Insights',
                         semanticLabel: 'Open Wardrobe Insights',
-                        onTap: () => onSelected(WardrobeInsightsScreen.routeName),
+                        onTap: () =>
+                            onSelected(WardrobeInsightsScreen.routeName),
                       ),
                     ],
                   ),
