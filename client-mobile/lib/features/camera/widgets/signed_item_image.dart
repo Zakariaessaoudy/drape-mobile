@@ -6,10 +6,16 @@ import '../api/signed_image_api.dart';
 import 'image_placeholder.dart';
 
 class SignedItemImage extends StatelessWidget {
-  const SignedItemImage({super.key, required this.imageUrl, this.imageApi});
+  const SignedItemImage({
+    super.key,
+    required this.imageUrl,
+    this.imageApi,
+    this.fit = BoxFit.contain,
+  });
 
   final String imageUrl;
   final SignedImageApi? imageApi;
+  final BoxFit fit;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +34,7 @@ class SignedItemImage extends StatelessWidget {
 
         return Image.network(
           snapshot.data!,
-          fit: BoxFit.contain,
+          fit: fit,
           errorBuilder: (_, _, _) => const ImagePlaceholder(
             text: 'Signed image URL exists, but it could not be loaded.',
           ),

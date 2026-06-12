@@ -1,8 +1,8 @@
 import 'package:client_mobile/core/constants/app_constants.dart';
-import 'package:client_mobile/features/camera/widgets/image_placeholder.dart';
-import 'package:client_mobile/features/camera/widgets/signed_item_image.dart';
 import 'package:client_mobile/features/outfits/models/outfit.dart';
 import 'package:client_mobile/features/outfits/state/outfit_list_controller.dart';
+import 'package:client_mobile/features/wardrobe/models/wardrobe_item.dart';
+import 'package:client_mobile/features/wardrobe/widgets/cached_wardrobe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -183,11 +183,22 @@ class _OutfitItemPreview extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         child: Container(
           color: const Color(0xFFF4F4F4),
-          child: item.imageUrl != null && item.imageUrl!.isNotEmpty
-              ? SignedItemImage(imageUrl: item.imageUrl!)
-              : ImagePlaceholder(text: item.category),
+          child: CachedWardrobeImage(item: item.toWardrobeItem()),
         ),
       ),
+    );
+  }
+}
+
+extension on OutfitItem {
+  WardrobeItem toWardrobeItem() {
+    return WardrobeItem(
+      id: id,
+      name: name,
+      category: category,
+      color: color,
+      imageUrl: imageUrl,
+      imageStatus: imageStatus,
     );
   }
 }

@@ -1,8 +1,7 @@
 import 'package:client_mobile/core/constants/app_constants.dart';
-import 'package:client_mobile/features/camera/widgets/image_placeholder.dart';
-import 'package:client_mobile/features/camera/widgets/signed_item_image.dart';
 import 'package:client_mobile/features/wardrobe/models/wardrobe_item.dart';
 import 'package:client_mobile/features/wardrobe/state/wardrobe_controller.dart';
+import 'package:client_mobile/features/wardrobe/widgets/cached_wardrobe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -134,9 +133,7 @@ class _WardrobeItemCard extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.all(10),
-              child: item.imageUrl != null && item.imageUrl!.isNotEmpty
-                  ? SignedItemImage(imageUrl: item.imageUrl!)
-                  : ImagePlaceholder(text: item.imageStatus),
+              child: CachedWardrobeImage(item: item, fit: BoxFit.contain),
             ),
             Positioned(
               left: 10,

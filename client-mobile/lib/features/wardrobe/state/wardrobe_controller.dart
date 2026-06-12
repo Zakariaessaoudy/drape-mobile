@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/api_constants.dart';
@@ -11,18 +13,21 @@ class WardrobeState {
     this.loading = false,
     this.loaded = false,
     this.error,
+    this.localImagePaths = const {},
   });
 
   final List<WardrobeItem> items;
   final bool loading;
   final bool loaded;
   final String? error;
+  final Map<String, String> localImagePaths;
 
   WardrobeState copyWith({
     List<WardrobeItem>? items,
     bool? loading,
     bool? loaded,
     String? error,
+    Map<String, String>? localImagePaths,
     bool clearError = false,
   }) {
     return WardrobeState(
@@ -30,8 +35,11 @@ class WardrobeState {
       loading: loading ?? this.loading,
       loaded: loaded ?? this.loaded,
       error: clearError ? null : error ?? this.error,
+      localImagePaths: localImagePaths ?? this.localImagePaths,
     );
   }
+
+  String? localImagePathFor(String itemId) => localImagePaths[itemId];
 
   List<WardrobeItem> byCategory(String category) {
     if (category == 'ALL') return items;
@@ -66,7 +74,14 @@ class WardrobeController extends Notifier<WardrobeState> {
     state = state.copyWith(loading: true, clearError: true);
     try {
       final items = await ref.read(itemApiProvider).fetchItems();
-      state = WardrobeState(items: items, loaded: true);
+      final localImagePaths = await ref
+          .read(localImageCacheProvider)
+          .cacheImages(items);
+      state = WardrobeState(
+        items: items,
+        localImagePaths: localImagePaths,
+        loaded: true,
+      );
     } on ItemApiException catch (error) {
       state = state.copyWith(
         loading: false,
