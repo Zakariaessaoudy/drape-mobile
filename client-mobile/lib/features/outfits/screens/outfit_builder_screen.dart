@@ -1,7 +1,6 @@
-import 'package:client_mobile/features/camera/widgets/image_placeholder.dart';
-import 'package:client_mobile/features/camera/widgets/signed_item_image.dart';
 import 'package:client_mobile/features/outfits/state/outfit_builder_controller.dart';
 import 'package:client_mobile/features/outfits/state/outfit_list_controller.dart';
+import 'package:client_mobile/features/outfits/widgets/outfit_item_carousel.dart';
 import 'package:client_mobile/features/wardrobe/models/wardrobe_item.dart';
 import 'package:client_mobile/features/wardrobe/state/wardrobe_controller.dart';
 import 'package:flutter/material.dart';
@@ -110,6 +109,7 @@ class _ItemRow extends ConsumerWidget {
     final controller = ref.read(outfitBuilderControllerProvider.notifier);
     final items = ref.watch(outfitSlotItemsProvider(slot));
     final selected = _selectedItem(items, builder.selectedIdFor(slot));
+    final selectedId = builder.selectedIdFor(slot);
 
     return Expanded(
       child: Column(
@@ -160,15 +160,40 @@ class _ItemRow extends ConsumerWidget {
             ),
           ),
           Expanded(
-            child: _RowContent(
-              loading: wardrobe.loading && !wardrobe.loaded,
-              error: wardrobe.error,
-              items: items,
-              slot: slot,
-              selectedId: builder.selectedIdFor(slot),
-              onRetry: () =>
-                  ref.read(wardrobeControllerProvider.notifier).refresh(),
-              onSelect: (itemId) => controller.selectItem(slot, itemId),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                if (wardrobe.loading && !wardrobe.loaded) {
+                  return const Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFFD4FF00),
+                      ),
+                    ),
+                  );
+                }
+
+                if (wardrobe.error != null && items.isEmpty) {
+                  return _RowErrorState(
+                    message: wardrobe.error!,
+                    onRetry: () =>
+                        ref.read(wardrobeControllerProvider.notifier).refresh(),
+                  );
+                }
+
+                return OutfitItemCarousel(
+                  categoryLabel: slot.label,
+                  items: items,
+                  selectedItemId: selectedId,
+                  height: constraints.maxHeight,
+                  onSelected: (item) {
+                    if (selectedId == item.id) return;
+                    controller.selectItem(slot, item.id);
+                  },
+                );
+              },
             ),
           ),
         ],
@@ -185,164 +210,37 @@ class _ItemRow extends ConsumerWidget {
   }
 }
 
-class _RowContent extends StatelessWidget {
-  const _RowContent({
-    required this.loading,
-    required this.error,
-    required this.items,
-    required this.slot,
-    required this.selectedId,
-    required this.onRetry,
-    required this.onSelect,
-  });
+class _RowErrorState extends StatelessWidget {
+  const _RowErrorState({required this.message, required this.onRetry});
 
-  final bool loading;
-  final String? error;
-  final List<WardrobeItem> items;
-  final OutfitSlot slot;
-  final String? selectedId;
+  final String message;
   final Future<void> Function() onRetry;
-  final ValueChanged<String> onSelect;
 
   @override
   Widget build(BuildContext context) {
-    if (loading) {
-      return const Center(
-        child: SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: Color(0xFFD4FF00),
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.wifi_off, color: Colors.white24, size: 20),
+          const SizedBox(height: 6),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white38, fontSize: 11),
           ),
-        ),
-      );
-    }
-
-    if (error != null && items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.wifi_off, color: Colors.white24, size: 20),
-            const SizedBox(height: 6),
-            Text(
-              error!,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white38, fontSize: 11),
-            ),
-            const SizedBox(height: 6),
-            GestureDetector(
-              onTap: onRetry,
-              child: Text(
-                'Retry',
-                style: GoogleFonts.spaceMono(
-                  fontSize: 11,
-                  color: const Color(0xFFD4FF00),
-                ),
+          const SizedBox(height: 6),
+          GestureDetector(
+            onTap: onRetry,
+            child: Text(
+              'Retry',
+              style: GoogleFonts.spaceMono(
+                fontSize: 11,
+                color: const Color(0xFFD4FF00),
               ),
             ),
-          ],
-        ),
-      );
-    }
-
-    if (items.isEmpty) {
-      return Center(
-        child: Text(
-          'No ready ${slot.label.toLowerCase()} found',
-          style: const TextStyle(color: Colors.white24, fontSize: 11),
-        ),
-      );
-    }
-
-    return ListView.separated(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-      itemCount: items.length,
-      separatorBuilder: (context, index) => const SizedBox(width: 10),
-      itemBuilder: (context, index) {
-        final item = items[index];
-        return _ItemCard(
-          item: item,
-          selected: selectedId == item.id,
-          onTap: () => onSelect(item.id),
-        );
-      },
-    );
-  }
-}
-
-class _ItemCard extends StatelessWidget {
-  const _ItemCard({
-    required this.item,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final WardrobeItem item;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        width: 90,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? const Color(0xFFD4FF00) : const Color(0xFF2A2A2A),
-            width: selected ? 2 : 0.5,
           ),
-          color: selected
-              ? const Color(0xFFD4FF00).withValues(alpha: 0.06)
-              : const Color(0xFF1A1A1A),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(11),
-                ),
-                child: item.imageUrl != null && item.imageUrl!.isNotEmpty
-                    ? SignedItemImage(imageUrl: item.imageUrl!)
-                    : ImagePlaceholder(text: item.imageStatus),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(6, 4, 6, 6),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      item.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w500,
-                        color: selected
-                            ? const Color(0xFFD4FF00)
-                            : Colors.white60,
-                      ),
-                    ),
-                  ),
-                  if (selected)
-                    const Icon(
-                      Icons.check_circle,
-                      color: Color(0xFFD4FF00),
-                      size: 10,
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
