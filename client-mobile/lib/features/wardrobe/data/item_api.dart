@@ -89,6 +89,27 @@ class ItemApi {
       throw const ItemApiException('Could not add this item');
     }
   }
+
+  Future<void> deleteItem(String itemId) async {
+    try {
+      await _apiClient.delete('${ApiConstants.items}/$itemId');
+    } on ApiException catch (error) {
+      if (error.statusCode == 401 || error.statusCode == 403) {
+        throw const ItemApiException(
+          'Session expired. Please log in again.',
+          sessionExpired: true,
+        );
+      }
+
+      throw ItemApiException('Could not delete item: ${error.message}');
+    } on http.ClientException {
+      throw ItemApiException(
+        'Cannot reach Wardrobe API at ${_apiClient.baseUrl}',
+      );
+    } catch (_) {
+      throw const ItemApiException('Could not delete item');
+    }
+  }
 }
 
 class ItemApiException implements Exception {

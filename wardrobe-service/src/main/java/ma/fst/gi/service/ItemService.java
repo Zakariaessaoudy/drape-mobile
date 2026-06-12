@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -101,6 +102,22 @@ public class ItemService {
         }
 
         return toResponse(itemRepository.save(item));
+    }
+
+    @Transactional
+    public void deleteItem(String userEmail, String itemId) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "authenticated user not found"));
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "item not found"));
+
+        if (!item.getUser().getId().equals(user.getId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "item not found");
+        }
+
+        new HashSet<>(item.getOutfits()).forEach(outfit -> outfit.getItems().remove(item));
+        item.getOutfits().clear();
+        itemRepository.delete(item);
     }
 
     private Categorie findOrCreateCategory(String category) {

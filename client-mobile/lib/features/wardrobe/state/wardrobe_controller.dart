@@ -100,6 +100,42 @@ class WardrobeController extends Notifier<WardrobeState> {
       nextItems[index] = item;
     }
     state = state.copyWith(items: nextItems, loaded: true);
+    unawaited(cacheItemImage(item));
+  }
+
+  Future<bool> deleteItem(String itemId) async {
+    state = state.copyWith(clearError: true);
+    try {
+      await ref.read(itemApiProvider).deleteItem(itemId);
+      final nextItems = state.items.where((item) => item.id != itemId).toList();
+      final nextLocalPaths = {...state.localImagePaths}..remove(itemId);
+      state = state.copyWith(
+        items: nextItems,
+        localImagePaths: nextLocalPaths,
+        loaded: true,
+      );
+      unawaited(ref.read(localImageCacheProvider).removeImage(itemId));
+      return true;
+    } on ItemApiException catch (error) {
+      state = state.copyWith(error: error.message);
+      return false;
+    }
+  }
+
+  Future<void> cacheItemImage(WardrobeItem item) async {
+    if (item.imageStatus.toUpperCase() != 'READY') return;
+
+    final path = await ref
+        .read(localImageCacheProvider)
+        .cacheImage(item.id, item.imageUrl);
+    if (path == null) return;
+
+    final itemStillExists = state.items.any((current) => current.id == item.id);
+    if (!itemStillExists) return;
+
+    state = state.copyWith(
+      localImagePaths: {...state.localImagePaths, item.id: path},
+    );
   }
 
   List<WardrobeItem> readyItemsForCategory(String category) {
