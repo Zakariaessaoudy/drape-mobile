@@ -4,14 +4,12 @@ import 'dart:io';
 
 import 'package:client_mobile/core/constants/app_constants.dart';
 import 'package:client_mobile/features/camera/models/create_camera_item_request.dart';
-import 'package:client_mobile/features/camera/state/add_camera_item_controller.dart';
+import 'package:client_mobile/features/camera/state/add_camera_item_notifier.dart';
 import 'package:client_mobile/features/camera/widgets/category_picker.dart';
-import 'package:client_mobile/features/wardrobe/state/wardrobe_controller.dart';
 import 'package:client_mobile/shared/widgets/auth_text_field.dart';
 import 'package:client_mobile/shared/widgets/field_label.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:provider/provider.dart';
 
 class ImageConfirmScreen extends StatelessWidget {
   const ImageConfirmScreen({super.key, required this.imagePath});
@@ -20,10 +18,7 @@ class ImageConfirmScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AddCameraItemController(),
-      child: _ImageConfirmView(imagePath: imagePath),
-    );
+    return _ImageConfirmView(imagePath: imagePath);
   }
 }
 
@@ -51,21 +46,21 @@ class _ImageConfirmViewState extends ConsumerState<_ImageConfirmView> {
   Future<void> _createItem() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final controller = context.read<AddCameraItemController>();
-    final created = await controller.createItem(
-      CreateCameraItemRequest(
-        name: _nameController.text,
-        category: controller.category,
-        color: _colorController.text,
-        imagePath: widget.imagePath,
-      ),
-    );
+    final state = ref.read(addCameraItemNotifierProvider);
+    final created = await ref
+        .read(addCameraItemNotifierProvider.notifier)
+        .createItem(
+          CreateCameraItemRequest(
+            name: _nameController.text,
+            category: state.category,
+            color: _colorController.text,
+            imagePath: widget.imagePath,
+          ),
+        );
 
     if (!mounted) return;
 
     if (created) {
-      await ref.read(wardrobeControllerProvider.notifier).refresh();
-      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Item added. Image processing started.')),
       );
@@ -73,9 +68,10 @@ class _ImageConfirmViewState extends ConsumerState<_ImageConfirmView> {
       return;
     }
 
-    if (controller.sessionExpired) {
+    final nextState = ref.read(addCameraItemNotifierProvider);
+    if (nextState.sessionExpired) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(controller.error ?? 'Please login again.')),
+        SnackBar(content: Text(nextState.error ?? 'Please login again.')),
       );
       Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
     }
@@ -83,7 +79,8 @@ class _ImageConfirmViewState extends ConsumerState<_ImageConfirmView> {
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.watch<AddCameraItemController>();
+    final state = ref.watch(addCameraItemNotifierProvider);
+    final notifier = ref.read(addCameraItemNotifierProvider.notifier);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -118,8 +115,8 @@ class _ImageConfirmViewState extends ConsumerState<_ImageConfirmView> {
               const FieldLabel('CATEGORY'),
               const SizedBox(height: 10),
               CategoryPicker(
-                value: controller.category,
-                onChanged: controller.setCategory,
+                value: state.category,
+                onChanged: notifier.setCategory,
               ),
               const SizedBox(height: 18),
               const FieldLabel('COLOR'),
@@ -129,10 +126,10 @@ class _ImageConfirmViewState extends ConsumerState<_ImageConfirmView> {
                 hintText: 'black',
                 validator: _required('Color is required'),
               ),
-              if (controller.error != null && !controller.sessionExpired) ...[
+              if (state.error != null && !state.sessionExpired) ...[
                 const SizedBox(height: 14),
                 Text(
-                  controller.error!,
+                  state.error!,
                   style: const TextStyle(color: Color(0xFFFF6B6B)),
                 ),
               ],
@@ -144,17 +141,15 @@ class _ImageConfirmViewState extends ConsumerState<_ImageConfirmView> {
                     icon: Icons.close_rounded,
                     iconColor: Colors.white,
                     backgroundColor: Colors.white12,
-                    onTap: controller.loading
-                        ? null
-                        : () => Navigator.pop(context),
+                    onTap: state.loading ? null : () => Navigator.pop(context),
                     tooltip: 'Retake',
                   ),
                   _ActionButton(
                     icon: Icons.check_rounded,
                     iconColor: Colors.black,
                     backgroundColor: AuthColors.neon,
-                    loading: controller.loading,
-                    onTap: controller.loading ? null : _createItem,
+                    loading: state.loading,
+                    onTap: state.loading ? null : _createItem,
                     tooltip: 'Add item',
                   ),
                 ],

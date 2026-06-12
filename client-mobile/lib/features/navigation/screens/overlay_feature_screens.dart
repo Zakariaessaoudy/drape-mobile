@@ -1,11 +1,11 @@
 import 'package:client_mobile/core/constants/app_constants.dart';
-import 'package:client_mobile/features/camera/widgets/image_placeholder.dart';
-import 'package:client_mobile/features/camera/widgets/signed_item_image.dart';
-import 'package:client_mobile/features/outfits/data/outfit_api.dart';
-import 'package:client_mobile/features/wardrobe/data/item_api.dart';
+import 'package:client_mobile/features/outfits/state/outfit_list_controller.dart';
 import 'package:client_mobile/features/wardrobe/models/wardrobe_item.dart';
+import 'package:client_mobile/features/wardrobe/state/wardrobe_controller.dart';
+import 'package:client_mobile/features/wardrobe/widgets/cached_wardrobe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
@@ -138,46 +138,36 @@ class _StylePreferencesScreenState extends State<StylePreferencesScreen> {
   }
 }
 
-class ProcessingItemsScreen extends StatefulWidget {
+class ProcessingItemsScreen extends ConsumerStatefulWidget {
   const ProcessingItemsScreen({super.key});
 
   static const routeName = '/processing-items';
 
   @override
-  State<ProcessingItemsScreen> createState() => _ProcessingItemsScreenState();
+  ConsumerState<ProcessingItemsScreen> createState() =>
+      _ProcessingItemsScreenState();
 }
 
-class _ProcessingItemsScreenState extends State<ProcessingItemsScreen> {
-  late Future<List<WardrobeItem>> _itemsFuture;
-
+class _ProcessingItemsScreenState extends ConsumerState<ProcessingItemsScreen> {
   @override
   void initState() {
     super.initState();
-    _itemsFuture = _loadItems();
-  }
-
-  Future<List<WardrobeItem>> _loadItems() async {
-    final items = await ItemApi().fetchItems();
-    return items
-        .where((item) => item.imageStatus.toUpperCase() == 'PROCESSING')
-        .toList();
-  }
-
-  Future<void> _refresh() async {
-    final next = _loadItems();
-    setState(() {
-      _itemsFuture = next;
+    Future.microtask(() {
+      ref.read(wardrobeControllerProvider.notifier).loadIfNeeded();
     });
-    await next;
   }
 
   @override
   Widget build(BuildContext context) {
-    return _FuturePageShell<WardrobeItem>(
+    final wardrobe = ref.watch(wardrobeControllerProvider);
+
+    return _ListPageShell<WardrobeItem>(
       title: 'Processing Items',
       subtitle: 'Track uploads that are still being cleaned and prepared.',
-      future: _itemsFuture,
-      onRefresh: _refresh,
+      loading: wardrobe.loading && !wardrobe.loaded,
+      error: wardrobe.error,
+      items: wardrobe.processingItems,
+      onRefresh: ref.read(wardrobeControllerProvider.notifier).refresh,
       emptyIcon: Icons.hourglass_top_rounded,
       emptyMessage: 'Nothing is processing right now.',
       itemBuilder: (context, items) {
@@ -202,39 +192,36 @@ class _ProcessingItemsScreenState extends State<ProcessingItemsScreen> {
   }
 }
 
-class UploadHistoryScreen extends StatefulWidget {
+class UploadHistoryScreen extends ConsumerStatefulWidget {
   const UploadHistoryScreen({super.key});
 
   static const routeName = '/upload-history';
 
   @override
-  State<UploadHistoryScreen> createState() => _UploadHistoryScreenState();
+  ConsumerState<UploadHistoryScreen> createState() =>
+      _UploadHistoryScreenState();
 }
 
-class _UploadHistoryScreenState extends State<UploadHistoryScreen> {
-  late Future<List<WardrobeItem>> _itemsFuture;
-
+class _UploadHistoryScreenState extends ConsumerState<UploadHistoryScreen> {
   @override
   void initState() {
     super.initState();
-    _itemsFuture = ItemApi().fetchItems();
-  }
-
-  Future<void> _refresh() async {
-    final next = ItemApi().fetchItems();
-    setState(() {
-      _itemsFuture = next;
+    Future.microtask(() {
+      ref.read(wardrobeControllerProvider.notifier).loadIfNeeded();
     });
-    await next;
   }
 
   @override
   Widget build(BuildContext context) {
-    return _FuturePageShell<WardrobeItem>(
+    final wardrobe = ref.watch(wardrobeControllerProvider);
+
+    return _ListPageShell<WardrobeItem>(
       title: 'Upload History',
       subtitle: 'Every wardrobe item that has been scanned into DRAPE.',
-      future: _itemsFuture,
-      onRefresh: _refresh,
+      loading: wardrobe.loading && !wardrobe.loaded,
+      error: wardrobe.error,
+      items: wardrobe.items,
+      onRefresh: ref.read(wardrobeControllerProvider.notifier).refresh,
       emptyIcon: Icons.history_toggle_off,
       emptyMessage: 'Your upload history will show up here.',
       itemBuilder: (context, items) {
@@ -253,36 +240,37 @@ class _UploadHistoryScreenState extends State<UploadHistoryScreen> {
   }
 }
 
-class WardrobeInsightsScreen extends StatefulWidget {
+class WardrobeInsightsScreen extends ConsumerStatefulWidget {
   const WardrobeInsightsScreen({super.key});
 
   static const routeName = '/wardrobe-insights';
 
   @override
-  State<WardrobeInsightsScreen> createState() => _WardrobeInsightsScreenState();
+  ConsumerState<WardrobeInsightsScreen> createState() =>
+      _WardrobeInsightsScreenState();
 }
 
-class _WardrobeInsightsScreenState extends State<WardrobeInsightsScreen> {
-  late Future<_InsightData> _insightsFuture;
-
+class _WardrobeInsightsScreenState
+    extends ConsumerState<WardrobeInsightsScreen> {
   @override
   void initState() {
     super.initState();
-    _insightsFuture = _loadInsights();
+    Future.microtask(() {
+      ref.read(wardrobeControllerProvider.notifier).loadIfNeeded();
+      ref.read(outfitListControllerProvider.notifier).loadIfNeeded();
+    });
   }
 
   Future<void> _refresh() async {
-    final next = _loadInsights();
-    setState(() {
-      _insightsFuture = next;
-    });
-    await next;
+    await Future.wait([
+      ref.read(wardrobeControllerProvider.notifier).refresh(),
+      ref.read(outfitListControllerProvider.notifier).refresh(),
+    ]);
   }
 
-  Future<_InsightData> _loadInsights() async {
-    final items = await ItemApi().fetchItems();
-    final outfits = await OutfitApi().fetchOutfits();
-
+  _InsightData _buildInsights() {
+    final items = ref.watch(wardrobeControllerProvider).items;
+    final outfits = ref.watch(outfitListControllerProvider).outfits;
     int countByCategory(String category) {
       return items.where((item) => item.category == category).length;
     }
@@ -301,82 +289,91 @@ class _WardrobeInsightsScreenState extends State<WardrobeInsightsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<_InsightData>(
-      future: _insightsFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const _FeaturePageShell(
-            title: 'Wardrobe Insights',
-            subtitle: 'A quick read on the balance and health of your closet.',
-            child: SizedBox(height: 220, child: _FeatureLoadingView()),
-          );
-        }
+    final wardrobe = ref.watch(wardrobeControllerProvider);
+    final outfitList = ref.watch(outfitListControllerProvider);
+    final loading =
+        (wardrobe.loading && !wardrobe.loaded) ||
+        (outfitList.loading && !outfitList.loaded);
+    final error = wardrobe.error ?? outfitList.error;
 
-        if (snapshot.hasError) {
-          return _FeaturePageShell(
-            title: 'Wardrobe Insights',
-            subtitle: 'A quick read on the balance and health of your closet.',
-            child: _FeatureEmptyState(
-              icon: Icons.analytics_outlined,
-              message: snapshot.error.toString(),
-              buttonLabel: 'Retry',
-              onPressed: _refresh,
+    if (loading) {
+      return const _FeaturePageShell(
+        title: 'Wardrobe Insights',
+        subtitle: 'A quick read on the balance and health of your closet.',
+        child: SizedBox(height: 220, child: _FeatureLoadingView()),
+      );
+    }
+
+    if (error != null && wardrobe.items.isEmpty && outfitList.outfits.isEmpty) {
+      return _FeaturePageShell(
+        title: 'Wardrobe Insights',
+        subtitle: 'A quick read on the balance and health of your closet.',
+        child: _FeatureEmptyState(
+          icon: Icons.analytics_outlined,
+          message: error,
+          buttonLabel: 'Retry',
+          onPressed: _refresh,
+        ),
+      );
+    }
+
+    final data = _buildInsights();
+
+    return _FeaturePageShell(
+      title: 'Wardrobe Insights',
+      subtitle: 'A quick read on the balance and health of your closet.',
+      child: RefreshIndicator(
+        color: AuthColors.neon,
+        backgroundColor: Colors.black,
+        onRefresh: _refresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          shrinkWrap: true,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: _InsightStatCard(
+                    value: '${data.itemCount}',
+                    label: 'ITEMS',
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _InsightStatCard(
+                    value: '${data.outfitCount}',
+                    label: 'OUTFITS',
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _InsightStatCard(
+                    value: '${data.readyCount}',
+                    label: 'READY',
+                  ),
+                ),
+              ],
             ),
-          );
-        }
-
-        final data = snapshot.data ?? const _InsightData.empty();
-
-        return _FeaturePageShell(
-          title: 'Wardrobe Insights',
-          subtitle: 'A quick read on the balance and health of your closet.',
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: _InsightStatCard(
-                      value: '${data.itemCount}',
-                      label: 'ITEMS',
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _InsightStatCard(
-                      value: '${data.outfitCount}',
-                      label: 'OUTFITS',
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _InsightStatCard(
-                      value: '${data.readyCount}',
-                      label: 'READY',
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
-              const _SectionLabel('Category Balance'),
-              const SizedBox(height: 12),
-              _InsightBreakdownCard(
-                rows: [
-                  _BreakdownRowData('Tops', data.topCount),
-                  _BreakdownRowData('Bottoms', data.bottomCount),
-                  _BreakdownRowData('Shoes', data.shoeCount),
-                ],
-              ),
-              const SizedBox(height: 18),
-              const _InfoBanner(
-                icon: Icons.bolt,
-                title: 'Quick read',
-                description:
-                    'Your strongest styling leverage comes from balancing tops, bottoms, and statement footwear.',
-              ),
-            ],
-          ),
-        );
-      },
+            const SizedBox(height: 18),
+            const _SectionLabel('Category Balance'),
+            const SizedBox(height: 12),
+            _InsightBreakdownCard(
+              rows: [
+                _BreakdownRowData('Tops', data.topCount),
+                _BreakdownRowData('Bottoms', data.bottomCount),
+                _BreakdownRowData('Shoes', data.shoeCount),
+              ],
+            ),
+            const SizedBox(height: 18),
+            const _InfoBanner(
+              icon: Icons.bolt,
+              title: 'Quick read',
+              description:
+                  'Your strongest styling leverage comes from balancing tops, bottoms, and statement footwear.',
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -571,11 +568,13 @@ class _FeaturePageShell extends StatelessWidget {
   }
 }
 
-class _FuturePageShell<T> extends StatelessWidget {
-  const _FuturePageShell({
+class _ListPageShell<T> extends StatelessWidget {
+  const _ListPageShell({
     required this.title,
     required this.subtitle,
-    required this.future,
+    required this.loading,
+    required this.error,
+    required this.items,
     required this.onRefresh,
     required this.emptyIcon,
     required this.emptyMessage,
@@ -584,7 +583,9 @@ class _FuturePageShell<T> extends StatelessWidget {
 
   final String title;
   final String subtitle;
-  final Future<List<T>> future;
+  final bool loading;
+  final String? error;
+  final List<T> items;
   final Future<void> Function() onRefresh;
   final IconData emptyIcon;
   final String emptyMessage;
@@ -592,62 +593,56 @@ class _FuturePageShell<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<T>>(
-      future: future,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(
-            backgroundColor: Colors.black,
-            appBar: AppBar(
+    if (loading) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          titleSpacing: 0,
+          title: Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+        ),
+        body: const _FeatureLoadingView(),
+      );
+    }
+
+    if (error != null && items.isEmpty) {
+      return _FeaturePageShell(
+        title: title,
+        subtitle: subtitle,
+        child: _FeatureEmptyState(
+          icon: emptyIcon,
+          message: error!,
+          buttonLabel: 'Retry',
+          onPressed: onRefresh,
+        ),
+      );
+    }
+
+    return _FeaturePageShell(
+      title: title,
+      subtitle: subtitle,
+      child: items.isEmpty
+          ? _FeatureEmptyState(
+              icon: emptyIcon,
+              message: emptyMessage,
+              buttonLabel: 'Refresh',
+              onPressed: onRefresh,
+            )
+          : RefreshIndicator(
+              color: AuthColors.neon,
               backgroundColor: Colors.black,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              titleSpacing: 0,
-              title: Text(
-                title,
-                style: const TextStyle(fontWeight: FontWeight.w800),
+              onRefresh: onRefresh,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                shrinkWrap: true,
+                children: [itemBuilder(context, items)],
               ),
             ),
-            body: const _FeatureLoadingView(),
-          );
-        }
-
-        if (snapshot.hasError) {
-          return _FeaturePageShell(
-            title: title,
-            subtitle: subtitle,
-            child: _FeatureEmptyState(
-              icon: emptyIcon,
-              message: snapshot.error.toString(),
-              buttonLabel: 'Retry',
-              onPressed: onRefresh,
-            ),
-          );
-        }
-
-        final items = snapshot.data ?? <T>[];
-        return _FeaturePageShell(
-          title: title,
-          subtitle: subtitle,
-          child: items.isEmpty
-              ? _FeatureEmptyState(
-                  icon: emptyIcon,
-                  message: emptyMessage,
-                  buttonLabel: 'Refresh',
-                  onPressed: onRefresh,
-                )
-              : RefreshIndicator(
-                  color: AuthColors.neon,
-                  backgroundColor: Colors.black,
-                  onRefresh: onRefresh,
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    shrinkWrap: true,
-                    children: [itemBuilder(context, items)],
-                  ),
-                ),
-        );
-      },
     );
   }
 }
@@ -806,9 +801,7 @@ class _UploadHistoryCard extends StatelessWidget {
               child: SizedBox(
                 width: 78,
                 height: 96,
-                child: item.imageUrl != null && item.imageUrl!.isNotEmpty
-                    ? SignedItemImage(imageUrl: item.imageUrl!)
-                    : ImagePlaceholder(text: item.imageStatus),
+                child: CachedWardrobeImage(item: item),
               ),
             ),
             const SizedBox(width: 14),
@@ -1273,14 +1266,6 @@ class _InsightData {
     required this.shoeCount,
     required this.readyCount,
   });
-
-  const _InsightData.empty()
-    : itemCount = 0,
-      outfitCount = 0,
-      topCount = 0,
-      bottomCount = 0,
-      shoeCount = 0,
-      readyCount = 0;
 
   final int itemCount;
   final int outfitCount;

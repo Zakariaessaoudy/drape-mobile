@@ -1,33 +1,34 @@
 // Darija: Had screen test/debug bach nt2ekdo wach AI w Wardrobe kmlou lkhedma:
 // kayjib items, kaybeyn status, w kayaffichi images b signed URL.
 import 'package:client_mobile/core/constants/api_constants.dart';
-import 'package:client_mobile/features/camera/models/camera_item.dart';
-import 'package:client_mobile/features/camera/models/camera_item_counts.dart';
-import 'package:client_mobile/features/camera/state/item_fetch_controller.dart';
 import 'package:client_mobile/features/camera/widgets/image_placeholder.dart';
-import 'package:client_mobile/features/camera/widgets/signed_item_image.dart';
 import 'package:client_mobile/features/camera/widgets/status_pill.dart';
+import 'package:client_mobile/features/wardrobe/models/wardrobe_item.dart';
+import 'package:client_mobile/features/wardrobe/state/wardrobe_controller.dart';
+import 'package:client_mobile/features/wardrobe/widgets/cached_wardrobe_image.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ItemFetchTestScreen extends StatelessWidget {
+class ItemFetchTestScreen extends ConsumerStatefulWidget {
   const ItemFetchTestScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => ItemFetchController()..load(),
-      child: const _ItemFetchTestView(),
-    );
-  }
+  ConsumerState<ItemFetchTestScreen> createState() =>
+      _ItemFetchTestScreenState();
 }
 
-class _ItemFetchTestView extends StatelessWidget {
-  const _ItemFetchTestView();
+class _ItemFetchTestScreenState extends ConsumerState<ItemFetchTestScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(wardrobeControllerProvider.notifier).loadIfNeeded();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.watch<ItemFetchController>();
+    final wardrobe = ref.watch(wardrobeControllerProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -43,44 +44,57 @@ class _ItemFetchTestView extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            onPressed: context.read<ItemFetchController>().load,
+            onPressed: ref.read(wardrobeControllerProvider.notifier).refresh,
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
           ),
         ],
       ),
-      body: _Body(controller: controller),
+      body: _Body(
+        loading: wardrobe.loading && !wardrobe.loaded,
+        error: wardrobe.error,
+        items: wardrobe.items,
+        onRefresh: ref.read(wardrobeControllerProvider.notifier).refresh,
+      ),
     );
   }
 }
 
 class _Body extends StatelessWidget {
-  const _Body({required this.controller});
+  const _Body({
+    required this.loading,
+    required this.error,
+    required this.items,
+    required this.onRefresh,
+  });
 
-  final ItemFetchController controller;
+  final bool loading;
+  final String? error;
+  final List<WardrobeItem> items;
+  final Future<void> Function() onRefresh;
 
   @override
   Widget build(BuildContext context) {
-    if (controller.loading) {
+    if (loading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (controller.error != null) {
-      return _ErrorState(message: controller.error!);
+    if (error != null && items.isEmpty) {
+      return _ErrorState(message: error!);
     }
 
-    if (controller.items.isEmpty) {
+    if (items.isEmpty) {
       return const Center(child: Text('No items found.'));
     }
 
     return RefreshIndicator(
-      onRefresh: context.read<ItemFetchController>().load,
+      onRefresh: onRefresh,
       child: ListView(
         padding: const EdgeInsets.all(14),
         children: [
-          _Summary(counts: controller.counts),
+          _Summary(counts: _ItemCounts.fromItems(items)),
           const SizedBox(height: 12),
-          for (final item in controller.items) _ItemCard(item: item),
+          for (final item in items) _ItemCard(item: item),
         ],
       ),
     );
@@ -90,7 +104,7 @@ class _Body extends StatelessWidget {
 class _Summary extends StatelessWidget {
   const _Summary({required this.counts});
 
-  final CameraItemCounts counts;
+  final _ItemCounts counts;
 
   @override
   Widget build(BuildContext context) {
@@ -136,10 +150,12 @@ class _Count extends StatelessWidget {
 class _ItemCard extends StatelessWidget {
   const _ItemCard({required this.item});
 
-  final CameraItem item;
+  final WardrobeItem item;
 
   @override
   Widget build(BuildContext context) {
+    final hasImage = item.imageUrl != null && item.imageUrl!.isNotEmpty;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 14),
       clipBehavior: Clip.antiAlias,
@@ -148,8 +164,8 @@ class _ItemCard extends StatelessWidget {
         children: [
           AspectRatio(
             aspectRatio: 1,
-            child: item.hasImage
-                ? SignedItemImage(imageUrl: item.imageUrl!)
+            child: hasImage
+                ? CachedWardrobeImage(item: item)
                 : ImagePlaceholder(text: 'No image yet: ${item.imageStatus}'),
           ),
           Padding(
@@ -181,7 +197,7 @@ class _ItemCard extends StatelessWidget {
                     fontSize: 12,
                   ),
                 ),
-                if (item.hasImage) ...[
+                if (hasImage) ...[
                   const SizedBox(height: 8),
                   Text(
                     item.imageUrl!,
@@ -196,6 +212,35 @@ class _ItemCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ItemCounts {
+  const _ItemCounts({
+    required this.total,
+    required this.ready,
+    required this.processing,
+    required this.failed,
+  });
+
+  final int total;
+  final int ready;
+  final int processing;
+  final int failed;
+
+  factory _ItemCounts.fromItems(List<WardrobeItem> items) {
+    return _ItemCounts(
+      total: items.length,
+      ready: items
+          .where((item) => item.imageStatus.toUpperCase() == 'READY')
+          .length,
+      processing: items
+          .where((item) => item.imageStatus.toUpperCase() == 'PROCESSING')
+          .length,
+      failed: items
+          .where((item) => item.imageStatus.toUpperCase() == 'FAILED')
+          .length,
     );
   }
 }
