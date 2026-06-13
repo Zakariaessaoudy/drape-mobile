@@ -1,4 +1,4 @@
-// Darija: Had controller kayseyyer camera state:
+// Darija: Had controller kayssyr lcamera state:
 // initialize camera, take picture, gallery, flash, loading w errors.
 import 'package:camera/camera.dart' as camera;
 import 'package:flutter/foundation.dart';

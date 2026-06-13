@@ -1,12 +1,13 @@
 import 'package:camera/camera.dart';
 import 'package:client_mobile/features/auth/screens/login_screen.dart';
 import 'package:client_mobile/features/auth/state/auth_controller.dart';
-import 'package:client_mobile/features/camera/smart_camera_screen.dart';
+import 'package:client_mobile/features/camera/screens/smart_camera_screen.dart';
 import 'package:client_mobile/features/navigation/screens/overlay_feature_screens.dart';
 import 'package:client_mobile/features/outfits/screens/outfit_builder_screen.dart';
 import 'package:client_mobile/features/outfits/screens/outfits_screen.dart';
 import 'package:client_mobile/features/outfits/state/outfit_list_controller.dart';
 import 'package:client_mobile/features/profile/screens/profile_screen.dart';
+import 'package:client_mobile/features/wardrobe/screens/item_details_screen.dart';
 import 'package:client_mobile/features/wardrobe/screens/wardrobe_screen.dart';
 import 'package:client_mobile/features/wardrobe/state/wardrobe_controller.dart';
 import 'package:client_mobile/shared/layout/app_scaffold.dart';
@@ -19,6 +20,7 @@ class DrapeApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
+
       debugShowCheckedModeBanner: false,
       title: 'Drape',
       theme: ThemeData(
@@ -39,6 +41,10 @@ class DrapeApp extends ConsumerWidget {
         NotificationsScreen.routeName: (_) => const NotificationsScreen(),
         SettingsScreen.routeName: (_) => const SettingsScreen(),
         HelpScreen.routeName: (_) => const HelpScreen(),
+        ItemDetailsScreen.routeName: (context) {
+          final itemId = ModalRoute.of(context)?.settings.arguments as String?;
+          return ItemDetailsScreen(itemId: itemId ?? '');
+        },
         '/profile': (context) => ProfileScreen(
           onOpenWardrobe: () => Navigator.of(context).pop(),
           onOpenOutfits: () =>

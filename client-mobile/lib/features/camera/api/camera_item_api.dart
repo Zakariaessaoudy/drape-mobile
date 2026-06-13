@@ -1,4 +1,4 @@
-// Darija: Had file howa li kayhder m3a Wardrobe backend:
+// Had file howa li kayhder m3a Wardrobe backend:
 // kaycreer item b image, w kayjib list dyal items bach screens mayb9awch fihom network code.
 import 'dart:convert';
 import 'dart:io';
@@ -53,7 +53,7 @@ class CameraItemApi {
     } on FileSystemException {
       throw const CameraApiException('Could not read the selected image.');
     } on http.ClientException {
-      throw CameraApiException('Cannot reach Wardrobe API at $baseUrl');
+      throw const CameraApiException('Could not connect. Please try again.');
     } catch (_) {
       throw const CameraApiException('Could not add this item');
     }
@@ -74,7 +74,7 @@ class CameraItemApi {
     } on CameraApiException {
       rethrow;
     } on http.ClientException {
-      throw CameraApiException('Cannot reach Wardrobe API at $baseUrl');
+      throw const CameraApiException('Could not connect. Please try again.');
     } catch (_) {
       throw const CameraApiException('Could not fetch items');
     }
@@ -94,7 +94,7 @@ class CameraItemApi {
     final token = await _tokenStorage.readToken();
     if (token == null || token.isEmpty) {
       throw const CameraApiException(
-        'No saved token. Login in the main app first.',
+        'Please log in again.',
         sessionExpired: true,
       );
     }

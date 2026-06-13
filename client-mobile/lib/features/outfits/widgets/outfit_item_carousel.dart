@@ -12,6 +12,7 @@ class OutfitItemCarousel extends StatefulWidget {
     required this.selectedItemId,
     required this.onSelected,
     this.height = 220,
+    this.imageScale = 1.08,
   });
 
   final String categoryLabel;
@@ -19,6 +20,7 @@ class OutfitItemCarousel extends StatefulWidget {
   final String? selectedItemId;
   final ValueChanged<WardrobeItem> onSelected;
   final double height;
+  final double imageScale;
 
   @override
   State<OutfitItemCarousel> createState() => _OutfitItemCarouselState();
@@ -34,7 +36,7 @@ class _OutfitItemCarouselState extends State<OutfitItemCarousel> {
     _currentIndex = _indexFor(widget.selectedItemId);
     _pageController = PageController(
       initialPage: _currentIndex,
-      viewportFraction: 0.58,
+      viewportFraction: 0.66,
     );
     WidgetsBinding.instance.addPostFrameCallback((_) => _selectFirstIfNeeded());
   }
@@ -100,7 +102,7 @@ class _OutfitItemCarouselState extends State<OutfitItemCarousel> {
           child: Text(
             'No ready ${widget.categoryLabel.toLowerCase()} yet.',
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white30, fontSize: 12),
+            style: const TextStyle(color: Colors.black38, fontSize: 12),
           ),
         ),
       );
@@ -130,8 +132,11 @@ class _OutfitItemCarouselState extends State<OutfitItemCarousel> {
                       _pageController.page != null) {
                     distance = (index - _pageController.page!).abs();
                   }
-                  final scale = (1 - distance * 0.18).clamp(0.78, 1.0);
-                  final opacity = (1 - distance * 0.35).clamp(0.42, 1.0);
+                  final scale = (widget.imageScale - distance * 0.18).clamp(
+                    0.78,
+                    widget.imageScale,
+                  );
+                  final opacity = (1 - distance * 0.30).clamp(0.48, 1.0);
 
                   return Center(
                     child: Opacity(
@@ -145,7 +150,7 @@ class _OutfitItemCarouselState extends State<OutfitItemCarousel> {
             },
           ),
           Positioned(
-            bottom: 8,
+            bottom: 4,
             child: _CarouselPill(
               label: widget.categoryLabel,
               current: _currentIndex + 1,
@@ -170,18 +175,8 @@ class _CarouselItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 4, 8, 48),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: const Color(0xFF171717),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: CachedWardrobeImage(item: item, fit: BoxFit.contain),
-        ),
-      ),
+      padding: const EdgeInsets.fromLTRB(0, 0, 0, 28),
+      child: CachedWardrobeImage(item: item, fit: BoxFit.contain),
     );
   }
 }
@@ -208,8 +203,8 @@ class _CarouselPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 44,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      height: 34,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(999),
@@ -224,14 +219,14 @@ class _CarouselPill extends StatelessWidget {
             onTap: onBack,
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Text(
               '$label ($current/$total)',
               style: GoogleFonts.spaceMono(
                 color: AuthColors.neon,
-                fontSize: 13,
+                fontSize: 10,
                 fontWeight: FontWeight.w800,
-                letterSpacing: 1.2,
+                letterSpacing: 0.9,
               ),
             ),
           ),
@@ -264,7 +259,7 @@ class _PillArrow extends StatelessWidget {
       child: Icon(
         icon,
         color: enabled ? Colors.white : Colors.white24,
-        size: 28,
+        size: 22,
       ),
     );
   }

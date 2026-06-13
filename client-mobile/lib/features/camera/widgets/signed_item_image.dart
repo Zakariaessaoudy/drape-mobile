@@ -27,17 +27,14 @@ class SignedItemImage extends StatelessWidget {
         }
 
         if (snapshot.hasError || snapshot.data == null) {
-          return const ImagePlaceholder(
-            text: 'Image URL exists, but no signed URL could be created.',
-          );
+          return const ImagePlaceholder(text: 'Image unavailable.');
         }
 
         return Image.network(
           snapshot.data!,
           fit: fit,
-          errorBuilder: (_, _, _) => const ImagePlaceholder(
-            text: 'Signed image URL exists, but it could not be loaded.',
-          ),
+          errorBuilder: (_, _, _) =>
+              const ImagePlaceholder(text: 'Image unavailable.'),
         );
       },
     );

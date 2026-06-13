@@ -1,7 +1,6 @@
 import 'package:client_mobile/features/outfits/state/outfit_builder_controller.dart';
 import 'package:client_mobile/features/outfits/state/outfit_list_controller.dart';
 import 'package:client_mobile/features/outfits/widgets/outfit_item_carousel.dart';
-import 'package:client_mobile/features/wardrobe/models/wardrobe_item.dart';
 import 'package:client_mobile/features/wardrobe/state/wardrobe_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +15,8 @@ class OutfitBuilderScreen extends ConsumerStatefulWidget {
 }
 
 class _OutfitBuilderScreenState extends ConsumerState<OutfitBuilderScreen> {
+  static const _canvasColor = Color(0xFFF2F0E8);
+
   @override
   void initState() {
     super.initState();
@@ -29,7 +30,7 @@ class _OutfitBuilderScreenState extends ConsumerState<OutfitBuilderScreen> {
     final builder = ref.watch(outfitBuilderControllerProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F),
+      backgroundColor: _canvasColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -38,9 +39,7 @@ class _OutfitBuilderScreenState extends ConsumerState<OutfitBuilderScreen> {
               child: Column(
                 children: [
                   _ItemRow(slot: OutfitSlot.top),
-                  const _RowDivider(),
                   _ItemRow(slot: OutfitSlot.bottom),
-                  const _RowDivider(),
                   _ItemRow(slot: OutfitSlot.shoe),
                 ],
               ),
@@ -66,7 +65,7 @@ class _AppBar extends StatelessWidget {
             onPressed: () => Navigator.maybePop(context),
             icon: const Icon(
               Icons.arrow_back_ios_new,
-              color: Colors.white,
+              color: Colors.black,
               size: 18,
             ),
             padding: EdgeInsets.zero,
@@ -78,7 +77,7 @@ class _AppBar extends StatelessWidget {
             style: GoogleFonts.spaceMono(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: Colors.black,
               letterSpacing: 4,
             ),
           ),
@@ -87,7 +86,7 @@ class _AppBar extends StatelessWidget {
             'BUILD OUTFIT',
             style: GoogleFonts.spaceMono(
               fontSize: 10,
-              color: Colors.white38,
+              color: Colors.black45,
               letterSpacing: 2,
             ),
           ),
@@ -108,57 +107,11 @@ class _ItemRow extends ConsumerWidget {
     final builder = ref.watch(outfitBuilderControllerProvider);
     final controller = ref.read(outfitBuilderControllerProvider.notifier);
     final items = ref.watch(outfitSlotItemsProvider(slot));
-    final selected = _selectedItem(items, builder.selectedIdFor(slot));
     final selectedId = builder.selectedIdFor(slot);
 
     return Expanded(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-            child: Row(
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 6,
-                  height: 6,
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: selected == null
-                        ? const Color(0xFF2A2A2A)
-                        : const Color(0xFFD4FF00),
-                  ),
-                ),
-                Text(
-                  slot.label,
-                  style: GoogleFonts.spaceMono(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: selected == null
-                        ? Colors.white38
-                        : const Color(0xFFD4FF00),
-                    letterSpacing: 1.5,
-                  ),
-                ),
-                if (selected != null) ...[
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '- ${selected.name}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: Colors.white38,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -169,7 +122,7 @@ class _ItemRow extends ConsumerWidget {
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Color(0xFFD4FF00),
+                        color: Color(0xFFB6F000),
                       ),
                     ),
                   );
@@ -188,6 +141,7 @@ class _ItemRow extends ConsumerWidget {
                   items: items,
                   selectedItemId: selectedId,
                   height: constraints.maxHeight,
+                  imageScale: slot == OutfitSlot.bottom ? 1.18 : 1.08,
                   onSelected: (item) {
                     if (selectedId == item.id) return;
                     controller.selectItem(slot, item.id);
@@ -199,14 +153,6 @@ class _ItemRow extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  WardrobeItem? _selectedItem(List<WardrobeItem> items, String? selectedId) {
-    if (selectedId == null) return null;
-    for (final item in items) {
-      if (item.id == selectedId) return item;
-    }
-    return null;
   }
 }
 
@@ -222,12 +168,12 @@ class _RowErrorState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.wifi_off, color: Colors.white24, size: 20),
+          const Icon(Icons.wifi_off, color: Colors.black26, size: 20),
           const SizedBox(height: 6),
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white38, fontSize: 11),
+            style: const TextStyle(color: Colors.black54, fontSize: 11),
           ),
           const SizedBox(height: 6),
           GestureDetector(
@@ -255,9 +201,6 @@ class _SaveButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 20),
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: Color(0xFF2A2A2A), width: 0.5)),
-      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -266,7 +209,7 @@ class _SaveButton extends StatelessWidget {
               padding: EdgeInsets.only(bottom: 10),
               child: Text(
                 'Select a top, bottom, and shoes to continue',
-                style: TextStyle(color: Colors.white38, fontSize: 11),
+                style: TextStyle(color: Colors.black45, fontSize: 11),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -291,7 +234,7 @@ class _SaveButton extends StatelessWidget {
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFD4FF00),
-                disabledBackgroundColor: const Color(0xFF2A2A2A),
+                disabledBackgroundColor: const Color(0xFF2F2F2F),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -503,14 +446,5 @@ class _DarkTextField extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _RowDivider extends StatelessWidget {
-  const _RowDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(height: 0.5, color: const Color(0xFF2A2A2A));
   }
 }

@@ -42,8 +42,27 @@ class CachedWardrobeImage extends ConsumerWidget {
       return SignedItemImage(imageUrl: item.imageUrl!, fit: fit);
     }
 
+    if (item.imageStatus.toUpperCase() == 'PROCESSING') {
+      return const _SimpleImageLoader();
+    }
+
     return ImagePlaceholder(
       text: item.imageStatus.isEmpty ? item.category : item.imageStatus,
+    );
+  }
+}
+
+class _SimpleImageLoader extends StatelessWidget {
+  const _SimpleImageLoader();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: SizedBox(
+        width: 22,
+        height: 22,
+        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black54),
+      ),
     );
   }
 }

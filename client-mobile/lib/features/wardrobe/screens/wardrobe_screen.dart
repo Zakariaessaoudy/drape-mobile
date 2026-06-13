@@ -1,4 +1,5 @@
 import 'package:client_mobile/core/constants/app_constants.dart';
+import 'package:client_mobile/features/wardrobe/screens/item_details_screen.dart';
 import 'package:client_mobile/features/wardrobe/models/wardrobe_item.dart';
 import 'package:client_mobile/features/wardrobe/state/wardrobe_controller.dart';
 import 'package:client_mobile/features/wardrobe/widgets/cached_wardrobe_image.dart';
@@ -117,149 +118,23 @@ class _WardrobeContent extends StatelessWidget {
   }
 }
 
-class _WardrobeItemCard extends ConsumerWidget {
+class _WardrobeItemCard extends StatelessWidget {
   const _WardrobeItemCard({required this.item});
 
   final WardrobeItem item;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        color: const Color(0xFFF4F4F4),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(10),
-              child: CachedWardrobeImage(item: item, fit: BoxFit.contain),
-            ),
-            Positioned(
-              left: 10,
-              right: 10,
-              bottom: 10,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.62),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
-                  child: Text(
-                    item.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 10,
-              right: 10,
-              child: _DeleteItemButton(
-                onTap: () => _confirmDelete(context, ref),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
-    final confirmed =
-        await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) {
-            return AlertDialog(
-              backgroundColor: const Color(0xFF111111),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-                side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
-              ),
-              title: const Text(
-                'Delete item?',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              content: Text(
-                'Remove "${item.name}" from your wardrobe?',
-                style: const TextStyle(color: Colors.white70),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: const Text(
-                    'Cancel',
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(true),
-                  child: const Text(
-                    'Delete',
-                    style: TextStyle(
-                      color: Color(0xFFFF6B6B),
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        ) ??
-        false;
-
-    if (!confirmed || !context.mounted) return;
-
-    final success = await ref
-        .read(wardrobeControllerProvider.notifier)
-        .deleteItem(item.id);
-    if (!context.mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(success ? 'Item deleted.' : 'Could not delete item.'),
-      ),
-    );
-  }
-}
-
-class _DeleteItemButton extends StatelessWidget {
-  const _DeleteItemButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: 'Delete item',
-      child: GestureDetector(
-        onTap: onTap,
+    return GestureDetector(
+      onTap: () => Navigator.of(
+        context,
+      ).pushNamed(ItemDetailsScreen.routeName, arguments: item.id),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
         child: Container(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.72),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-          ),
-          child: const Icon(
-            Icons.delete_outline_rounded,
-            color: Color(0xFFFF6B6B),
-            size: 19,
-          ),
+          color: const Color(0xFFF4F4F4),
+          padding: const EdgeInsets.all(10),
+          child: CachedWardrobeImage(item: item, fit: BoxFit.contain),
         ),
       ),
     );

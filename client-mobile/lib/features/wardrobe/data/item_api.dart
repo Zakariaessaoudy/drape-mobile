@@ -27,11 +27,9 @@ class ItemApi {
         );
       }
 
-      throw ItemApiException('Could not fetch items: ${error.message}');
+      throw const ItemApiException('Could not load wardrobe items.');
     } on http.ClientException {
-      throw ItemApiException(
-        'Cannot reach Wardrobe API at ${_apiClient.baseUrl}',
-      );
+      throw const ItemApiException('Could not connect. Please try again.');
     } catch (_) {
       throw const ItemApiException('Could not fetch items');
     }
@@ -78,11 +76,9 @@ class ItemApi {
         );
       }
 
-      throw ItemApiException('Add item failed: ${error.message}');
+      throw const ItemApiException('Could not add this item.');
     } on http.ClientException {
-      throw ItemApiException(
-        'Cannot reach Wardrobe API at ${_apiClient.baseUrl}',
-      );
+      throw const ItemApiException('Could not connect. Please try again.');
     } on FileSystemException {
       throw const ItemApiException('Could not read the selected image.');
     } catch (_) {
@@ -101,11 +97,9 @@ class ItemApi {
         );
       }
 
-      throw ItemApiException('Could not delete item: ${error.message}');
+      throw const ItemApiException('Could not delete item.');
     } on http.ClientException {
-      throw ItemApiException(
-        'Cannot reach Wardrobe API at ${_apiClient.baseUrl}',
-      );
+      throw const ItemApiException('Could not connect. Please try again.');
     } catch (_) {
       throw const ItemApiException('Could not delete item');
     }

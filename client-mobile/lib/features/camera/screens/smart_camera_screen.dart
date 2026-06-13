@@ -1,4 +1,4 @@
-// Darija: Had screen howa camera principal:
+// Had screen howa camera principal:
 // kay7el camera/gallery, kaykhlli user ykhd picture, w kaydiha l confirmation screen.
 import 'package:camera/camera.dart';
 import 'package:client_mobile/core/constants/app_constants.dart';

@@ -24,11 +24,9 @@ class OutfitApi {
         );
       }
 
-      throw OutfitApiException('Could not fetch outfits: ${error.message}');
+      throw const OutfitApiException('Could not load outfits.');
     } on http.ClientException {
-      throw OutfitApiException(
-        'Cannot reach Wardrobe API at ${_apiClient.baseUrl}',
-      );
+      throw const OutfitApiException('Could not connect. Please try again.');
     } catch (_) {
       throw const OutfitApiException('Could not fetch outfits');
     }
@@ -64,11 +62,9 @@ class OutfitApi {
         );
       }
 
-      throw OutfitApiException('Could not save outfit: ${error.message}');
+      throw const OutfitApiException('Could not save outfit.');
     } on http.ClientException {
-      throw OutfitApiException(
-        'Cannot reach Wardrobe API at ${_apiClient.baseUrl}',
-      );
+      throw const OutfitApiException('Could not connect. Please try again.');
     } catch (_) {
       throw const OutfitApiException('Could not save outfit');
     }
@@ -85,11 +81,9 @@ class OutfitApi {
         );
       }
 
-      throw OutfitApiException('Could not delete outfit: ${error.message}');
+      throw const OutfitApiException('Could not delete outfit.');
     } on http.ClientException {
-      throw OutfitApiException(
-        'Cannot reach Wardrobe API at ${_apiClient.baseUrl}',
-      );
+      throw const OutfitApiException('Could not connect. Please try again.');
     } catch (_) {
       throw const OutfitApiException('Could not delete outfit');
     }

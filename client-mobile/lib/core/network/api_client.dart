@@ -151,12 +151,7 @@ class ApiClient {
   void _ensureSuccess(http.Response response) {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final message = _errorMessage(response);
-      throw ApiException(
-        statusCode: response.statusCode,
-        message: response.statusCode == 404
-            ? '$message at ${response.request?.url ?? baseUrl}'
-            : message,
-      );
+      throw ApiException(statusCode: response.statusCode, message: message);
     }
   }
 
@@ -191,17 +186,7 @@ class ApiClient {
   }
 
   String _networkErrorMessage(Object error) {
-    final hint =
-        'Unable to reach the server at $baseUrl. '
-        'For a physical device, use your computer LAN IP with '
-        '--dart-define=DRAPE_DEVICE_HOST_IP=<your-computer-ip> '
-        'or --dart-define=DRAPE_API_HOST=<your-computer-ip>.';
-
-    if (error is http.ClientException && error.message.trim().isNotEmpty) {
-      return '$hint ${error.message}';
-    }
-
-    return '$hint ${error.toString()}';
+    return 'Unable to reach the server. Please check your connection and try again.';
   }
 
   void close() {
